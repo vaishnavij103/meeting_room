@@ -32,9 +32,9 @@ def _validate_room_data(data: dict, require_name: bool = True) -> None:
             raise BookingError("name is required", http_status=422)
 
     capacity = data.get("capacity")
-    if capacity is not None:
-        if not isinstance(capacity, int) or capacity < 1:
-            raise BookingError("capacity must be at least 1", http_status=422)
+    # if capacity is not None:
+    #     if not isinstance(capacity, int) or capacity < 1:
+    #         raise BookingError("capacity must be at least 1", http_status=422)
 
     status = data.get("status")
     if status is not None and status not in ("active", "inactive"):
@@ -51,13 +51,22 @@ def create_room(repo: RoomRepository, data: dict) -> LocationWiseRoom:
     room = LocationWiseRoom(
         room_id=str(uuid.uuid4()),
         name=data["name"].strip(),
+        location=data.get("location"),  # ✅ REQUIRED
         floor=data.get("floor", 1),
         capacity=data["capacity"],
         amenities=data.get("amenities", []),
         status=data.get("status", "active"),
+
+        # ✅ Optional fields
+        building=data.get("building"),
+        room_type=data.get("room_type"),
+        cabin_type=data.get("cabin_type"),
+        vc_enabled=data.get("vc_enabled", False),
+        power_points=data.get("power_points", False),
         created_at=now,
         updated_at=now,
     )
+
     return repo.create(room)
 
 

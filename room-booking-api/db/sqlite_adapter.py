@@ -167,18 +167,75 @@ class SQLiteRoomRepo(RoomRepository):
 
     def create(self, room: LocationWiseRoom) -> LocationWiseRoom:
         with _connect(self._db_path) as conn:
-            conn.execute(
-                "INSERT INTO location_wise_rooms (room_id,name,floor,capacity,amenities,status,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?)",
-                (room.room_id, room.name, room.floor, room.capacity, json.dumps(room.amenities), room.status, room.created_at, room.updated_at),
-            )
+            conn.execute("""
+                INSERT INTO location_wise_rooms (
+                    room_id,
+                    name,
+                    location,
+                    floor,
+                    capacity,
+                    amenities,
+                    status,
+                    building,
+                    room_type,
+                    cabin_type,
+                    vc_enabled,
+                    power_points,
+                    created_at,
+                    updated_at
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (
+                room.room_id,
+                room.name,
+                room.location,          # ✅ REQUIRED FIX
+                room.floor,
+                room.capacity,
+                json.dumps(room.amenities),
+                room.status,
+                room.building,
+                room.room_type,
+                room.cabin_type,
+                int(room.vc_enabled),  # ✅ bool → SQLite int
+                int(room.power_points),
+                room.created_at,
+                room.updated_at
+            ))
         return room
+
 
     def update(self, room: LocationWiseRoom) -> LocationWiseRoom:
         with _connect(self._db_path) as conn:
-            conn.execute(
-                "UPDATE location_wise_rooms SET name=?,floor=?,capacity=?,amenities=?,status=?,updated_at=? WHERE room_id=?",
-                (room.name, room.floor, room.capacity, json.dumps(room.amenities), room.status, room.updated_at, room.room_id),
-            )
+            conn.execute("""
+                UPDATE location_wise_rooms SET
+                    name=?,
+                    location=?,
+                    floor=?,
+                    capacity=?,
+                    amenities=?,
+                    status=?,
+                    building=?,
+                    room_type=?,
+                    cabin_type=?,
+                    vc_enabled=?,
+                    power_points=?,
+                    updated_at=?
+                WHERE room_id=?
+            """, (
+                room.name,
+                room.location,
+                room.floor,
+                room.capacity,
+                json.dumps(room.amenities),
+                room.status,
+                room.building,
+                room.room_type,
+                room.cabin_type,
+                int(room.vc_enabled),
+                int(room.power_points),
+                room.updated_at,
+                room.room_id
+            ))
         return room
 
     def delete(self, room_id: str) -> None:

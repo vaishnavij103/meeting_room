@@ -4,7 +4,7 @@ import csv
 import json
 
 
-BASE_URL = "http://localhost:8000"
+BASE_URL = "https://meeting-room-6ssp.onrender.com/api"
 
 # Rules:
 # - No floor field (all same floor)
