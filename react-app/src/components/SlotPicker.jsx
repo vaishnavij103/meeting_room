@@ -1,8 +1,21 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { getRoomAvailability, createBooking } from '../api';
 import { useAuth } from '../AuthContext';
 import { useTheme } from '../ThemeContext';
 import { format } from 'date-fns';
+
+const TIME_OPTIONS = Array.from({ length: 49 }).map((_, i) => {
+  const hr = Math.floor(i / 4) + 8;
+  const min = (i % 4) * 15;
+  const ampm = hr < 12 ? 'AM' : 'PM';
+  const hr12 = hr === 12 ? 12 : hr % 12;
+  const hr24 = hr.toString().padStart(2, '0');
+  const minStr = min.toString().padStart(2, '0');
+  return {
+    value: `${hr24}:${minStr}`,
+    label: `${hr12.toString().padStart(2, '0')}:${minStr} ${ampm}`
+  };
+});
 
 export default function SlotPicker({ room, onBooked, onClose }) {
   const { user } = useAuth();
@@ -16,7 +29,14 @@ export default function SlotPicker({ room, onBooked, onClose }) {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [ibStart, setIbStart] = useState(null);
-  const [ibEnd, setIbEnd] = useState(null)
+  const [ibEnd, setIbEnd] = useState(null);
+  const pickerRef = useRef(null);
+
+  useEffect(() => {
+    setTimeout(() => {
+      pickerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
+  }, [room.room_id]);
 
   useEffect(() => {
     setLoading(true);
@@ -39,7 +59,9 @@ export default function SlotPicker({ room, onBooked, onClose }) {
   }, [room.room_id, date]);
 
   const handleConfirm = async () => {
-    if (!selectedSlot) return;
+    if (!selectedSlot && (!ibStart || !ibEnd)) return;
+    const st = ibStart || selectedSlot?.start_time;
+    const et = ibEnd || selectedSlot?.end_time;
     setBooking(true);
     setError('');
     try {
@@ -47,12 +69,14 @@ export default function SlotPicker({ room, onBooked, onClose }) {
         title: title.trim() || 'Meeting',
         room_id: room.room_id,
         user_id: user.user_id,
-        start_time: selectedSlot.start_time,
-        end_time: selectedSlot.end_time,
+        start_time: st,
+        end_time: et,
         notes: '',
       });
-      setSuccess(`Booked! ${room.name} at ${selectedSlot.start_time.slice(11, 16)}`);
+      setSuccess(`Booked! ${room.name} at ${st.slice(11, 16)}`);
       setSelectedSlot(null);
+      setIbStart(null);
+      setIbEnd(null);
       setTitle('');
       setTimeout(() => { onBooked?.(); }, 800);
     } catch (e) {
@@ -63,7 +87,7 @@ export default function SlotPicker({ room, onBooked, onClose }) {
   const buildDateTime = (date, time) => `${date}T${time}:00`;
 
   return (
-    <div className="animate-fade-up mt-4">
+    <div ref={pickerRef} className="animate-fade-up mt-4 scroll-mt-24">
       <div className={`h-px bg-gradient-to-r from-transparent via-indigo-500 to-transparent mb-5`} />
 
       <div className="flex items-center justify-between mb-4">
@@ -90,6 +114,9 @@ export default function SlotPicker({ room, onBooked, onClose }) {
       </div>
 
       <div className="grid grid-cols-2 gap-6 mb-4">
+        <datalist id="time-options-slot">
+          {TIME_OPTIONS.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+        </datalist>
 
         {/* START TIME */}
         <div className={`${theme === 'dark' ? 'bg-[#0b1224] border-[#1e2a45]' : 'bg-gray-50 border-gray-200'} border rounded-2xl p-4`}>
@@ -104,11 +131,13 @@ export default function SlotPicker({ room, onBooked, onClose }) {
             <span className={theme === 'dark' ? 'text-slate-500' : 'text-slate-600'}>🕒</span>
             <input
               type="time"
+              list="time-options-slot"
+              required
               value={ibStart ? ibStart.slice(11, 16) : ""}
               onChange={e =>
-                setIbStart(buildDateTime(date, e.target.value))
+                setIbStart(e.target.value ? buildDateTime(date, e.target.value) : null)
               }
-              className={`bg-transparent w-full ${theme === 'dark' ? 'text-slate-100' : 'text-slate-900'} text-sm outline-none`}
+              className={`bg-transparent w-full ${theme === 'dark' ? 'text-slate-100' : 'text-slate-900'} text-sm outline-none cursor-pointer`}
             />
           </div>
         </div>
@@ -126,11 +155,13 @@ export default function SlotPicker({ room, onBooked, onClose }) {
             <span className={theme === 'dark' ? 'text-slate-500' : 'text-slate-600'}>🕒</span>
             <input
               type="time"
+              list="time-options-slot"
+              required
               value={ibEnd ? ibEnd.slice(11, 16) : ""}
               onChange={e =>
-                setIbEnd(buildDateTime(date, e.target.value))
+                setIbEnd(e.target.value ? buildDateTime(date, e.target.value) : null)
               }
-              className={`bg-transparent w-full ${theme === 'dark' ? 'text-slate-100' : 'text-slate-900'} text-sm outline-none`}
+              className={`bg-transparent w-full ${theme === 'dark' ? 'text-slate-100' : 'text-slate-900'} text-sm outline-none cursor-pointer`}
             />
           </div>
         </div>
@@ -148,35 +179,6 @@ export default function SlotPicker({ room, onBooked, onClose }) {
           ? 'bg-emerald-500/8 border-emerald-500/20 text-emerald-400'
           : 'bg-emerald-100 border-emerald-300 text-emerald-700'
         } border text-sm`}>✅ {success}</div>
-      )}
-
-      {loading ? (
-        <div className={`text-center py-8 ${theme === 'dark' ? 'text-slate-500' : 'text-slate-600'} text-sm`}>Loading slots...</div>
-      ) : slots.length === 0 ? (
-        <div className={`text-center py-8 ${theme === 'dark' ? 'text-slate-500' : 'text-slate-600'} text-sm`}>No available slots for this date. Try another date.</div>
-      ) : (
-        <>
-          <div className={`text-xs ${theme === 'dark' ? 'text-slate-500' : 'text-slate-600'} mb-3`}>
-            🟢 {slots.length} available slots — click one to book
-          </div>
-          <div className="grid grid-cols-6 sm:grid-cols-8 gap-2 mb-4">
-            {slots.map((slot, i) => {
-              const t = slot.start_time.slice(11, 16);
-              const picked = selectedSlot?.start_time === slot.start_time;
-              return (
-                <button key={i} onClick={() => setSelectedSlot(slot)}
-                  className={`py-2 rounded-xl text-xs font-bold transition-all ${picked
-                    ? 'bg-gradient-to-r from-indigo-500 to-purple-500 text-white shadow-lg shadow-indigo-500/25 scale-105'
-                    : theme === 'dark'
-                      ? 'bg-[#0f1420] border-[#1e2a45] text-slate-400 hover:border-indigo-500 hover:text-indigo-300 hover:bg-indigo-500/5'
-                      : 'bg-white border-gray-300 text-slate-600 hover:border-indigo-500 hover:text-indigo-600 hover:bg-indigo-50'
-                    } border`}>
-                  {t}
-                </button>
-              );
-            })}
-          </div>
-        </>
       )}
 
       {/* Confirm form */}

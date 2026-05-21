@@ -187,7 +187,7 @@ export default function RoomsPage() {
       {cityRooms.length === 0 && <EmptyState icon="🏗️" text="No rooms yet. Create your first room!" />}
 
       {/* Availability Viewer */}
-      <div className={`h-px bg-gradient-to-r from-transparent via-[${theme === 'dark' ? '#1e2a45' : 'gray-300'}] to-transparent mb-6`} />
+      <div className={`h-px bg-gradient-to-r from-transparent ${theme === 'dark' ? 'via-[#1e2a45]' : 'via-gray-300'} to-transparent mb-6`} />
       <SectionHeader title="📅 Room Availability" />
       <div className="grid grid-cols-2 gap-3 mb-4">
         <select value={availRoom} onChange={e => setAvailRoom(e.target.value)}

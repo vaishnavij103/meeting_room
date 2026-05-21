@@ -9,6 +9,19 @@ import BookingCard from '../components/BookingCard';
 import { format } from 'date-fns';
 import { useLocation } from "../LocationContext";
 
+const TIME_OPTIONS = Array.from({ length: 49 }).map((_, i) => {
+  const hr = Math.floor(i / 4) + 8;
+  const min = (i % 4) * 15;
+  const ampm = hr < 12 ? 'AM' : 'PM';
+  const hr12 = hr === 12 ? 12 : hr % 12;
+  const hr24 = hr.toString().padStart(2, '0');
+  const minStr = min.toString().padStart(2, '0');
+  return {
+    value: `${hr24}:${minStr}`,
+    label: `${hr12.toString().padStart(2, '0')}:${minStr} ${ampm}`
+  };
+});
+
 export default function BookingsPage() {
   const { location } = useLocation();
   const { user, isAdmin } = useAuth();
@@ -305,18 +318,18 @@ export default function BookingsPage() {
 
       {/* Cancel Confirm Dialog */}
       {cancelTarget && (
-        <div className="mb-4 p-4 rounded-2xl bg-rose-500/5 border border-rose-500/20 animate-fade-in">
+        <div className={`mb-4 p-4 rounded-2xl animate-fade-in border ${theme === 'dark' ? 'bg-rose-500/5 border-rose-500/20' : 'bg-rose-50 border-rose-200'}`}>
           <div className="flex items-center gap-3 mb-3">
             <span className="text-lg">⚠️</span>
-            <span className="text-sm text-rose-300">Cancel booking "{cancelTarget.title}"?</span>
+            <span className={`text-sm ${theme === 'dark' ? 'text-rose-300' : 'text-rose-700'}`}>Cancel booking "{cancelTarget.title}"?</span>
           </div>
           <div className="flex gap-2">
             <button onClick={handleCancel}
-              className="px-4 py-2 rounded-xl bg-rose-500/15 border border-rose-500/25 text-rose-400 text-sm font-semibold hover:bg-rose-500/25 transition-all">
+              className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all border ${theme === 'dark' ? 'bg-rose-500/15 border-rose-500/25 text-rose-400 hover:bg-rose-500/25' : 'bg-rose-100 border-rose-300 text-rose-700 hover:bg-rose-200'}`}>
               ✅ Yes, cancel
             </button>
             <button onClick={() => setCancelTarget(null)}
-              className="px-4 py-2 rounded-xl border border-[#1e2a45] text-slate-400 text-sm font-semibold hover:border-slate-500 transition-all">
+              className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all border ${theme === 'dark' ? 'border-[#1e2a45] text-slate-400 hover:border-slate-500' : 'border-gray-300 text-slate-600 hover:border-gray-400'}`}>
               ✖ No
             </button>
           </div>
@@ -325,32 +338,35 @@ export default function BookingsPage() {
 
       {/* Reschedule Form */}
       {rescheduleTarget && (
-        <div className="mb-4 p-5 rounded-2xl bg-gradient-to-br from-[#0f1420] to-[#161c2e] border border-indigo-500/20 animate-fade-in">
-          <div className="text-sm font-bold text-slate-100 mb-3">🔄 Reschedule: {rescheduleTarget.title}</div>
+        <div className={`mb-4 p-5 rounded-2xl border animate-fade-in ${theme === 'dark' ? 'bg-gradient-to-br from-[#0f1420] to-[#161c2e] border-indigo-500/20' : 'bg-gradient-to-br from-indigo-50 to-white border-indigo-200 shadow-sm'}`}>
+          <datalist id="time-options-reschedule">
+            {TIME_OPTIONS.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+          </datalist>
+          <div className={`text-sm font-bold mb-3 ${theme === 'dark' ? 'text-slate-100' : 'text-slate-900'}`}>🔄 Reschedule: {rescheduleTarget.title}</div>
           {rescheduleError && (
-            <div className="mb-3 px-4 py-2 rounded-xl bg-rose-500/8 border border-rose-500/20 text-rose-400 text-sm">❌ {rescheduleError}</div>
+            <div className={`mb-3 px-4 py-2 rounded-xl border text-sm ${theme === 'dark' ? 'bg-rose-500/8 border-rose-500/20 text-rose-400' : 'bg-rose-100 border-rose-300 text-rose-700'}`}>❌ {rescheduleError}</div>
           )}
           <div className="grid grid-cols-4 gap-3 mb-3">
             <div>
-              <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Title</label>
+              <label className={`block text-xs font-semibold uppercase tracking-wider mb-1 ${theme === 'dark' ? 'text-slate-500' : 'text-slate-600'}`}>Title</label>
               <input type="text" value={rescheduleData.title} onChange={e => setRescheduleData(d => ({ ...d, title: e.target.value }))}
                 placeholder={rescheduleTarget.title}
-                className="w-full px-3 py-2 rounded-xl bg-[#0a0f1e] border border-[#1e2a45] text-slate-100 text-sm focus:border-indigo-500 outline-none" />
+                className={`w-full px-3 py-2 rounded-xl text-sm outline-none border focus:border-indigo-500 transition-all ${theme === 'dark' ? 'bg-[#0a0f1e] border-[#1e2a45] text-slate-100' : 'bg-white border-gray-300 text-slate-900'}`} />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Date</label>
+              <label className={`block text-xs font-semibold uppercase tracking-wider mb-1 ${theme === 'dark' ? 'text-slate-500' : 'text-slate-600'}`}>Date</label>
               <input type="date" value={rescheduleData.date} onChange={e => setRescheduleData(d => ({ ...d, date: e.target.value }))}
-                className="w-full px-3 py-2 rounded-xl bg-[#0a0f1e] border border-[#1e2a45] text-slate-100 text-sm focus:border-indigo-500 outline-none" />
+                className={`w-full px-3 py-2 rounded-xl text-sm outline-none border focus:border-indigo-500 transition-all ${theme === 'dark' ? 'bg-[#0a0f1e] border-[#1e2a45] text-slate-100' : 'bg-white border-gray-300 text-slate-900'}`} />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Start</label>
-              <input type="time" value={rescheduleData.start} onChange={e => setRescheduleData(d => ({ ...d, start: e.target.value }))}
-                className="w-full px-3 py-2 rounded-xl bg-[#0a0f1e] border border-[#1e2a45] text-slate-100 text-sm focus:border-indigo-500 outline-none" />
+              <label className={`block text-xs font-semibold uppercase tracking-wider mb-1 ${theme === 'dark' ? 'text-slate-500' : 'text-slate-600'}`}>Start</label>
+              <input type="time" list="time-options-reschedule" required value={rescheduleData.start} onChange={e => setRescheduleData(d => ({ ...d, start: e.target.value }))}
+                className={`w-full px-3 py-2 rounded-xl text-sm outline-none border focus:border-indigo-500 transition-all cursor-pointer ${theme === 'dark' ? 'bg-[#0a0f1e] border-[#1e2a45] text-slate-100' : 'bg-white border-gray-300 text-slate-900'}`} />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">End</label>
-              <input type="time" value={rescheduleData.end} onChange={e => setRescheduleData(d => ({ ...d, end: e.target.value }))}
-                className="w-full px-3 py-2 rounded-xl bg-[#0a0f1e] border border-[#1e2a45] text-slate-100 text-sm focus:border-indigo-500 outline-none" />
+              <label className={`block text-xs font-semibold uppercase tracking-wider mb-1 ${theme === 'dark' ? 'text-slate-500' : 'text-slate-600'}`}>End</label>
+              <input type="time" list="time-options-reschedule" required value={rescheduleData.end} onChange={e => setRescheduleData(d => ({ ...d, end: e.target.value }))}
+                className={`w-full px-3 py-2 rounded-xl text-sm outline-none border focus:border-indigo-500 transition-all cursor-pointer ${theme === 'dark' ? 'bg-[#0a0f1e] border-[#1e2a45] text-slate-100' : 'bg-white border-gray-300 text-slate-900'}`} />
             </div>
           </div>
           <div className="flex gap-2">
@@ -359,7 +375,7 @@ export default function BookingsPage() {
               💾 Save
             </button>
             <button onClick={() => setRescheduleTarget(null)}
-              className="px-4 py-2 rounded-xl border border-[#1e2a45] text-slate-400 text-sm hover:border-rose-500 hover:text-rose-400 transition-all">
+                  className={`px-4 py-2 rounded-xl border text-sm transition-all ${theme === 'dark' ? 'border-[#1e2a45] text-slate-400 hover:border-rose-500 hover:text-rose-400' : 'border-gray-300 text-slate-600 hover:border-rose-500 hover:text-rose-600'}`}>
               ✖ Cancel
             </button>
           </div>
@@ -370,32 +386,32 @@ export default function BookingsPage() {
       <div className="flex gap-3 mb-4">
         <div>
           <input type="date" value={filterDate} onChange={e => setFilterDate(e.target.value)}
-            className="px-3 py-2 rounded-xl bg-[#0a0f1e] border border-[#1e2a45] text-slate-100 text-xs focus:border-indigo-500 outline-none" />
+            className={`px-3 py-2 rounded-xl text-xs outline-none border focus:border-indigo-500 transition-all ${theme === 'dark' ? 'bg-[#0a0f1e] border-[#1e2a45] text-slate-100' : 'bg-white border-gray-300 text-slate-900'}`} />
         </div>
         <select value={filterRoom} onChange={e => setFilterRoom(e.target.value)}
-          className="px-3 py-2 rounded-xl bg-[#0a0f1e] border border-[#1e2a45] text-slate-100 text-xs focus:border-indigo-500 outline-none">
+          className={`px-3 py-2 rounded-xl text-xs outline-none border focus:border-indigo-500 transition-all ${theme === 'dark' ? 'bg-[#0a0f1e] border-[#1e2a45] text-slate-100' : 'bg-white border-gray-300 text-slate-900'}`}>
           <option value="">All Rooms</option>
           {cityRooms.map(r => <option key={r.room_id} value={r.room_id}>{r.name}</option>)}
         </select>
         <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)}
-          className="px-3 py-2 rounded-xl bg-[#0a0f1e] border border-[#1e2a45] text-slate-100 text-xs focus:border-indigo-500 outline-none">
+          className={`px-3 py-2 rounded-xl text-xs outline-none border focus:border-indigo-500 transition-all ${theme === 'dark' ? 'bg-[#0a0f1e] border-[#1e2a45] text-slate-100' : 'bg-white border-gray-300 text-slate-900'}`}>
           <option value="">All Status</option>
           <option value="confirmed">Confirmed</option>
           <option value="cancelled">Cancelled</option>
         </select>
         {(filterDate || filterRoom || filterStatus) && (
           <button onClick={() => { setFilterDate(''); setFilterRoom(''); setFilterStatus(''); }}
-            className="px-3 py-2 rounded-xl border border-[#1e2a45] text-slate-400 text-xs hover:text-rose-400 hover:border-rose-500 transition-all">
+            className={`px-3 py-2 rounded-xl border text-xs transition-all ${theme === 'dark' ? 'border-[#1e2a45] text-slate-400 hover:text-rose-400 hover:border-rose-500' : 'border-gray-300 text-slate-600 hover:text-rose-600 hover:border-rose-500'}`}>
             ✖ Clear
           </button>
         )}
       </div>
 
       {/* Summary bar */}
-      <div className="flex gap-6 mb-4 px-4 py-3 bg-[#0f1420] border border-[#1e2a45] rounded-xl">
-        <span className="text-xs text-slate-500"><span className="text-slate-100 font-bold">{filtered.length}</span> results</span>
-        <span className="text-xs text-slate-500"><span className="text-emerald-400 font-bold">{confirmedN}</span> confirmed</span>
-        <span className="text-xs text-slate-500"><span className="text-rose-400 font-bold">{cancelledN}</span> cancelled</span>
+      <div className={`flex gap-6 mb-4 px-4 py-3 rounded-xl border ${theme === 'dark' ? 'bg-[#0f1420] border-[#1e2a45]' : 'bg-gray-50 border-gray-200'}`}>
+        <span className={`text-xs ${theme === 'dark' ? 'text-slate-500' : 'text-slate-600'}`}><span className={`font-bold ${theme === 'dark' ? 'text-slate-100' : 'text-slate-900'}`}>{filtered.length}</span> results</span>
+        <span className={`text-xs ${theme === 'dark' ? 'text-slate-500' : 'text-slate-600'}`}><span className="text-emerald-500 font-bold">{confirmedN}</span> confirmed</span>
+        <span className={`text-xs ${theme === 'dark' ? 'text-slate-500' : 'text-slate-600'}`}><span className="text-rose-500 font-bold">{cancelledN}</span> cancelled</span>
       </div>
 
       {/* Booking list */}

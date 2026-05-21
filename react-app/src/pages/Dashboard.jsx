@@ -7,6 +7,18 @@ import BookingCard from '../components/BookingCard';
 import { format } from 'date-fns';
 import { useLocation } from "../LocationContext";
 
+const TIME_OPTIONS = Array.from({ length: 49 }).map((_, i) => {
+  const hr = Math.floor(i / 4) + 8;
+  const min = (i % 4) * 15;
+  const ampm = hr < 12 ? 'AM' : 'PM';
+  const hr12 = hr === 12 ? 12 : hr % 12;
+  const hr24 = hr.toString().padStart(2, '0');
+  const minStr = min.toString().padStart(2, '0');
+  return {
+    value: `${hr24}:${minStr}`,
+    label: `${hr12.toString().padStart(2, '0')}:${minStr} ${ampm}`
+  };
+});
 
 export default function Dashboard() {
   const { location } = useLocation();
@@ -134,6 +146,22 @@ export default function Dashboard() {
     .sort((a, b) => a.start_time.localeCompare(b.start_time))
     .slice(0, 8);
 
+    const APEXON_VALUES = [
+    { icon: '🛡️', title: 'Integrity', desc: 'Establishing trust' },
+    { icon: '🌟', title: 'Authenticity', desc: 'Being ourselves' },
+    { icon: '🤝', title: 'Empathy', desc: 'Treating others well' },
+    { icon: '🌍', title: 'Community', desc: 'Collaborative experience' },
+    { icon: '💡', title: 'Entrepreneurial Spirit', desc: 'Continuous innovation' },
+    { icon: '✨', title: 'Excellence', desc: 'Highest standards' },
+  ];
+
+  const COMPANY_NEWS = [
+    { icon: '📢', text: 'All-Hands Townhall Meeting this Friday at 3:00 PM' },
+    { icon: '🚀', text: 'Q3 Product Release is now live! Check out the new features.' },
+    { icon: '⚠️', text: 'Scheduled System Maintenance: Saturday 2:00 AM - 4:00 AM' },
+    { icon: '🎉', text: 'Welcome to the 25 new team members joining us this week!' },
+    { icon: '🏆', text: 'Apexon recognized as Top Place to Work 2024!' },
+  ];
 
   const buildDateTime = (date, time) => `${date}T${time}:00`;
 
@@ -147,6 +175,90 @@ export default function Dashboard() {
           {greeting}, {firstName} 👋
         </h1>
         <p className={`text-sm ${theme === 'dark' ? 'text-slate-500' : 'text-slate-600'} mt-1`}>{todayStr}</p>
+      </div>
+
+      {/* Apexon Core Values Marquee */}
+      <div className={`relative flex overflow-hidden mb-6 rounded-2xl py-3.5 border shadow-sm ${
+        theme === 'dark' 
+          ? 'bg-gradient-to-r from-[#0f1420] via-[#161c2e] to-[#0f1420] border-[#1e2a45]' 
+          : 'bg-gradient-to-r from-indigo-50/50 via-white to-indigo-50/50 border-indigo-100'
+      }`}>
+        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-indigo-500/5 to-transparent animate-pulse" />
+        
+        <style>
+          {`
+            @keyframes ticker {
+              0% { transform: translateX(0); }
+              100% { transform: translateX(-50%); }
+            }
+            .animate-ticker {
+              animation: ticker 40s linear infinite;
+              display: flex;
+              width: max-content;
+            }
+            .animate-ticker:hover {
+              animation-play-state: paused;
+            }
+            .animate-ticker-news {
+              animation: ticker 50s linear infinite;
+              display: flex;
+              width: max-content;
+            }
+            .animate-ticker-news:hover {
+              animation-play-state: paused;
+            }
+          `}
+        </style>
+
+        <div className="animate-ticker items-center cursor-default">
+          {[...Array(2)].map((_, i) => (
+            <div key={i} className="flex gap-8 items-center px-4">
+              {APEXON_VALUES.map(val => (
+                <div key={val.title} className="flex items-center gap-2.5">
+                  <div className={`w-8 h-8 flex items-center justify-center rounded-full ${theme === 'dark' ? 'bg-indigo-500/10 border border-indigo-500/20' : 'bg-indigo-100 border border-indigo-200'} text-sm shadow-inner flex-shrink-0`}>
+                    {val.icon}
+                  </div>
+                  <div className="flex flex-col">
+                    <span className={`font-bold uppercase tracking-wider text-[0.7rem] ${theme === 'dark' ? 'text-indigo-400' : 'text-indigo-600'}`}>
+                      {val.title}
+                    </span>
+                    <span className={`text-[0.65rem] ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
+                      {val.desc}
+                    </span>
+                  </div>
+                  <div className={`mx-4 h-4 w-px ${theme === 'dark' ? 'bg-[#1e2a45]' : 'bg-indigo-200'}`} />
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Company News Marquee */}
+      <div className={`relative flex overflow-hidden mb-6 rounded-xl py-2.5 border shadow-sm ${
+        theme === 'dark' 
+          ? 'bg-gradient-to-r from-[#161c2e] via-[#0f1420] to-[#161c2e] border-[#1e2a45]' 
+          : 'bg-gradient-to-r from-amber-50/50 via-white to-amber-50/50 border-amber-100'
+      }`}>
+        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-amber-500/5 to-transparent animate-pulse" />
+        
+        <div className="animate-ticker-news items-center cursor-default">
+          {[...Array(2)].map((_, i) => (
+            <div key={i} className="flex gap-8 items-center px-4">
+              {COMPANY_NEWS.map((news, idx) => (
+                <div key={idx} className="flex items-center gap-2.5">
+                  <div className="text-sm flex-shrink-0">
+                    {news.icon}
+                  </div>
+                  <span className={`text-xs font-medium whitespace-nowrap ${theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
+                    {news.text}
+                  </span>
+                  <div className={`mx-4 h-1 w-1 rounded-full flex-shrink-0 ${theme === 'dark' ? 'bg-[#1e2a45]' : 'bg-amber-200'}`} />
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* KPI Row */}
@@ -229,6 +341,9 @@ export default function Dashboard() {
               </div>
             ) : (
               <>
+                <datalist id="time-options">
+                  {TIME_OPTIONS.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+                </datalist>
                 {/* Time Picker */}
                 <div className="grid grid-cols-2 gap-6 mb-4">
 
@@ -245,11 +360,13 @@ export default function Dashboard() {
                       <span className={theme === 'dark' ? 'text-slate-500' : 'text-slate-600'}>🕒</span>
                       <input
                         type="time"
+                        list="time-options"
+                        required
                         value={ibStart ? ibStart.slice(11, 16) : ""}
                         onChange={e =>
-                          setIbStart(buildDateTime(ibDate, e.target.value))
+                          setIbStart(e.target.value ? buildDateTime(ibDate, e.target.value) : null)
                         }
-                        className={`bg-transparent w-full ${theme === 'dark' ? 'text-slate-100' : 'text-slate-900'} text-sm outline-none`}
+                        className={`bg-transparent w-full ${theme === 'dark' ? 'text-slate-100' : 'text-slate-900'} text-sm outline-none cursor-pointer`}
                       />
                     </div>
                   </div>
@@ -267,11 +384,13 @@ export default function Dashboard() {
                       <span className={theme === 'dark' ? 'text-slate-500' : 'text-slate-600'}>🕒</span>
                       <input
                         type="time"
+                        list="time-options"
+                        required
                         value={ibEnd ? ibEnd.slice(11, 16) : ""}
                         onChange={e =>
-                          setIbEnd(buildDateTime(ibDate, e.target.value))
+                          setIbEnd(e.target.value ? buildDateTime(ibDate, e.target.value) : null)
                         }
-                        className={`bg-transparent w-full ${theme === 'dark' ? 'text-slate-100' : 'text-slate-900'} text-sm outline-none`}
+                        className={`bg-transparent w-full ${theme === 'dark' ? 'text-slate-100' : 'text-slate-900'} text-sm outline-none cursor-pointer`}
                       />
                     </div>
                   </div>
@@ -349,9 +468,9 @@ export default function Dashboard() {
           {upcoming.length === 0
             ? <EmptyState icon="🎉" text="No more meetings today!" />
             : upcoming.map(b => (
-              <div key={b.booking_id} className="p-3 bg-[#0f1420] border border-[#1e2a45] rounded-xl mb-2">
-                <div className="text-sm font-semibold text-slate-100">{b.title}</div>
-                <div className="text-xs text-slate-500">
+              <div key={b.booking_id} className={`p-3 rounded-xl mb-2 border ${theme === 'dark' ? 'bg-[#0f1420] border-[#1e2a45]' : 'bg-white border-gray-200 shadow-sm'}`}>
+                <div className={`text-sm font-semibold ${theme === 'dark' ? 'text-slate-100' : 'text-slate-900'}`}>{b.title}</div>
+                <div className={`text-xs ${theme === 'dark' ? 'text-slate-500' : 'text-slate-600'}`}>
                   🏢 {roomMap[b.room_id]} · {b.start_time.slice(11, 16)}–{b.end_time.slice(11, 16)}
                 </div>
               </div>

@@ -1,9 +1,12 @@
+import { useState } from "react";
 import {
     Button,
     TextField,
     Select,
     MenuItem,
     FormControl,
+    Menu,
+    Badge
 } from "@mui/material";
 import { MapPin, Search, Bell, Moon, Sun } from "lucide-react";
 
@@ -24,6 +27,7 @@ const locations = [
 export function Navbar() {
     const { location, setLocation } = useLocation();
     const { theme, toggleTheme } = useTheme();
+    const [notifAnchor, setNotifAnchor] = useState(null);
 
     return (
 
@@ -63,24 +67,6 @@ export function Navbar() {
                         </Select>
                     </FormControl>
                 </div>
-
-                {/* Search */}
-                <div className="relative w-full max-w-md hidden md:block">
-                    <Search className={`absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 ${theme === "dark" ? "text-slate-400" : "text-slate-500"}`} />
-                    <TextField
-                        size="small"
-                        placeholder="Search rooms..."
-                        fullWidth
-                        InputProps={{
-                            style: {
-                                paddingLeft: 36,
-                                borderRadius: 999,
-                                backgroundColor: theme === "dark" ? "rgba(0,0,0,0.05)" : "rgba(0,0,0,0.05)",
-                                color: theme === "dark" ? "white" : "black",
-                            },
-                        }}
-                    />
-                </div>
             </div>
 
             {/* RIGHT */}
@@ -96,9 +82,48 @@ export function Navbar() {
                 </Button>
 
                 {/* Notification */}
-                <Button sx={{ minWidth: 0, color: theme === "dark" ? "white" : "black" }}>
-                    <Bell size={18} />
+                <Button 
+                    onClick={(e) => setNotifAnchor(e.currentTarget)} 
+                    sx={{ minWidth: 0, color: theme === "dark" ? "white" : "black" }}
+                >
+                    <Badge color="error" variant="dot" invisible={Boolean(notifAnchor)}>
+                        <Bell size={18} />
+                    </Badge>
                 </Button>
+
+                {/* Notification Menu */}
+                <Menu
+                    anchorEl={notifAnchor}
+                    open={Boolean(notifAnchor)}
+                    onClose={() => setNotifAnchor(null)}
+                    anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                    transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+                    PaperProps={{
+                        sx: {
+                            mt: 1.5,
+                            bgcolor: theme === 'dark' ? '#0f1420' : '#ffffff',
+                            color: theme === 'dark' ? '#f8fafc' : '#0f172a',
+                            border: '1px solid',
+                            borderColor: theme === 'dark' ? '#1e2a45' : '#e2e8f0',
+                            borderRadius: '1rem',
+                            minWidth: '280px',
+                            boxShadow: theme === 'dark' ? '0 10px 15px -3px rgba(0, 0, 0, 0.5)' : '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+                        }
+                    }}
+                >
+                    <div className={`px-4 py-3 border-b text-sm font-bold ${theme === 'dark' ? 'border-[#1e2a45]' : 'border-gray-100'}`}>
+                        Notifications
+                    </div>
+                    <MenuItem onClick={() => setNotifAnchor(null)} sx={{ fontSize: '0.8rem', py: 1.5 }}>
+                        <span className="mr-2">👋</span> Welcome to Apexon RoomBook!
+                    </MenuItem>
+                    <MenuItem onClick={() => setNotifAnchor(null)} sx={{ fontSize: '0.8rem', py: 1.5 }}>
+                        <span className="mr-2">✅</span> Your booking was confirmed.
+                    </MenuItem>
+                    <MenuItem onClick={() => setNotifAnchor(null)} sx={{ fontSize: '0.8rem', py: 1.5 }}>
+                        <span className="mr-2">🚀</span> Explore the new Dashboard features.
+                    </MenuItem>
+                </Menu>
 
             </div>
         </nav>

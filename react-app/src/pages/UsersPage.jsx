@@ -96,6 +96,7 @@ function UserCard({ user, bookingCount, onView }) {
 }
 
 export default function UsersPage() {
+  const { theme } = useTheme();
   const [users, setUsers] = useState([]);
   const [bookingCounts, setBookingCounts] = useState({});
   const [loading, setLoading] = useState(true);
@@ -155,13 +156,13 @@ export default function UsersPage() {
       <div className="mb-4">
         <input type="text" value={search} onChange={e => setSearch(e.target.value)}
           placeholder="🔍 Search users by name, email, or department..."
-          className="w-full px-4 py-2.5 rounded-xl bg-[#0a0f1e] border border-[#1e2a45] text-slate-100 text-sm placeholder-slate-600 focus:border-indigo-500 outline-none" />
+          className={`w-full px-4 py-2.5 rounded-xl text-sm focus:border-indigo-500 outline-none transition-all border ${theme === 'dark' ? 'bg-[#0a0f1e] border-[#1e2a45] text-slate-100 placeholder-slate-600' : 'bg-white border-gray-300 text-slate-900 placeholder-slate-400 focus:ring-1 focus:ring-indigo-100'}`} />
       </div>
 
       {/* Summary */}
-      <div className="flex gap-6 mb-5 px-4 py-3 bg-[#0f1420] border border-[#1e2a45] rounded-xl">
-        <span className="text-xs text-slate-500"><span className="text-slate-100 font-bold">{filtered.length}</span> team members</span>
-        <span className="text-xs text-slate-500"><span className="text-indigo-400 font-bold">{depts.size}</span> departments</span>
+      <div className={`flex gap-6 mb-5 px-4 py-3 rounded-xl border ${theme === 'dark' ? 'bg-[#0f1420] border-[#1e2a45]' : 'bg-gray-50 border-gray-200'}`}>
+        <span className={`text-xs ${theme === 'dark' ? 'text-slate-500' : 'text-slate-600'}`}><span className={`font-bold ${theme === 'dark' ? 'text-slate-100' : 'text-slate-900'}`}>{filtered.length}</span> team members</span>
+        <span className={`text-xs ${theme === 'dark' ? 'text-slate-500' : 'text-slate-600'}`}><span className={`font-bold ${theme === 'dark' ? 'text-indigo-400' : 'text-indigo-600'}`}>{depts.size}</span> departments</span>
       </div>
 
       {/* User grid */}
@@ -176,15 +177,15 @@ export default function UsersPage() {
       {/* User bookings drawer */}
       {selectedUser && (
         <div className="animate-fade-in">
-          <div className="h-px bg-gradient-to-r from-transparent via-[#1e2a45] to-transparent mb-6" />
+          <div className={`h-px bg-gradient-to-r from-transparent ${theme === 'dark' ? 'via-[#1e2a45]' : 'via-gray-300'} to-transparent mb-6`} />
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-sm font-bold">
                 {selectedUser.name?.split(' ').map(p => p[0]).join('').toUpperCase().slice(0, 2)}
               </div>
               <div>
-                <div className="text-base font-bold text-slate-100">Bookings for {selectedUser.name}</div>
-                <div className="text-xs text-slate-500">{selectedUser.email} · {selectedUser.department}</div>
+                <div className={`text-base font-bold ${theme === 'dark' ? 'text-slate-100' : 'text-slate-900'}`}>Bookings for {selectedUser.name}</div>
+                <div className={`text-xs ${theme === 'dark' ? 'text-slate-500' : 'text-slate-600'}`}>{selectedUser.email} · {selectedUser.department}</div>
               </div>
             </div>
             <Button variant="secondary" onClick={() => setSelectedUser(null)}>✖ Close</Button>
