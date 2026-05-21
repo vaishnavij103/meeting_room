@@ -1,11 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
 import { getUsers, createUser, getBookings, getUserBookings, getRooms } from '../api';
+import { useTheme } from '../ThemeContext';
 import { PageHeader, EmptyState, Input, Select, Button } from '../components/ui';
 import BookingCard from '../components/BookingCard';
 
 const DEPARTMENTS = ['', 'Engineering', 'Design', 'Product', 'Marketing', 'Sales', 'HR', 'Finance', 'Operations', 'Legal', 'Support', 'Other'];
 
 function UserForm({ onSave, onCancel }) {
+  const { theme } = useTheme();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -22,10 +24,16 @@ function UserForm({ onSave, onCancel }) {
   };
 
   return (
-    <div className="p-5 rounded-2xl bg-gradient-to-br from-[#0f1420] to-[#161c2e] border border-[#1e2a45] mb-4 relative">
+    <div className={`p-5 rounded-2xl ${theme === 'dark'
+      ? 'bg-gradient-to-br from-[#0f1420] to-[#161c2e] border-[#1e2a45]'
+      : 'bg-gradient-to-br from-gray-50 to-gray-100 border-gray-200'
+    } border mb-4 relative`}>
       <div className="absolute top-0 left-6 right-6 h-px bg-gradient-to-r from-transparent via-indigo-500 to-transparent" />
-      <h3 className="text-base font-bold text-slate-100 mb-4">👤 Register New User</h3>
-      {error && <div className="mb-3 px-4 py-2 rounded-xl bg-rose-500/8 border border-rose-500/20 text-rose-400 text-sm">❌ {error}</div>}
+      <h3 className={`text-base font-bold ${theme === 'dark' ? 'text-slate-100' : 'text-slate-900'} mb-4`}>👤 Register New User</h3>
+      {error && <div className={`mb-3 px-4 py-2 rounded-xl ${theme === 'dark'
+        ? 'bg-rose-500/8 border-rose-500/20 text-rose-400'
+        : 'bg-rose-100 border-rose-300 text-rose-700'
+      } border text-sm`}>❌ {error}</div>}
       <form onSubmit={handleSubmit}>
         <div className="grid grid-cols-2 gap-3 mb-3">
           <Input label="Full Name" value={name} onChange={e => setName(e.target.value)} placeholder="Alex Johnson" />
@@ -48,6 +56,7 @@ function UserForm({ onSave, onCancel }) {
 }
 
 function UserCard({ user, bookingCount, onView }) {
+  const { theme } = useTheme();
   const initials = user.name?.split(' ').map(p => p[0]).join('').toUpperCase().slice(0, 2) || '?';
   const colors = [
     ['6366f1', '8b5cf6'], ['10b981', '34d399'], ['f59e0b', 'fbbf24'],
@@ -57,23 +66,29 @@ function UserCard({ user, bookingCount, onView }) {
   const [c1, c2] = colors[idx];
 
   return (
-    <div className="bg-gradient-to-br from-[#0f1420] to-[#161c2e] border border-[#1e2a45] rounded-2xl p-5 text-center transition-all hover:border-[#2d3f6b] hover:-translate-y-1 hover:shadow-[0_20px_60px_rgba(0,0,0,0.5)]">
+    <div className={`${theme === 'dark'
+      ? 'bg-gradient-to-br from-[#0f1420] to-[#161c2e] border-[#1e2a45] hover:border-[#2d3f6b] hover:shadow-[0_20px_60px_rgba(0,0,0,0.5)]'
+      : 'bg-gradient-to-br from-gray-50 to-gray-100 border-gray-200 hover:border-gray-300 hover:shadow-lg'
+    } border rounded-2xl p-5 text-center transition-all hover:-translate-y-1`}>
       <div className="w-14 h-14 rounded-full mx-auto mb-3 flex items-center justify-center text-lg font-bold text-white"
         style={{ background: `linear-gradient(135deg, #${c1}, #${c2})` }}>
         {initials}
       </div>
-      <div className="text-sm font-bold text-slate-100">{user.name}</div>
-      <div className="text-xs text-slate-500 truncate" title={user.email}>{user.email}</div>
-      <div className={`text-[0.68rem] font-bold uppercase tracking-wider mt-1 ${user.role === 'admin' ? 'text-indigo-400' : 'text-slate-500'}`}>
+      <div className={`text-sm font-bold ${theme === 'dark' ? 'text-slate-100' : 'text-slate-900'}`}>{user.name}</div>
+      <div className={`text-xs ${theme === 'dark' ? 'text-slate-500' : 'text-slate-600'} truncate`} title={user.email}>{user.email}</div>
+      <div className={`text-[0.68rem] font-bold uppercase tracking-wider mt-1 ${user.role === 'admin' ? 'text-indigo-400' : theme === 'dark' ? 'text-slate-500' : 'text-slate-600'}`}>
         {user.role === 'admin' ? '🛡️ Admin' : '👤 Employee'}
       </div>
-      <div className="text-xs text-indigo-400 mt-1">{user.department || 'No department'}</div>
+      <div className={`text-xs ${theme === 'dark' ? 'text-indigo-400' : 'text-indigo-600'} mt-1`}>{user.department || 'No department'}</div>
       <div className="mt-3">
         <div className="text-lg font-bold text-indigo-400">{bookingCount}</div>
-        <div className="text-[0.6rem] text-slate-600 uppercase tracking-wider">Bookings</div>
+        <div className={`text-[0.6rem] ${theme === 'dark' ? 'text-slate-600' : 'text-slate-500'} uppercase tracking-wider`}>Bookings</div>
       </div>
       <button onClick={() => onView(user)}
-        className="w-full mt-3 py-2 rounded-xl text-xs font-semibold border border-[#1e2a45] text-slate-400 hover:border-indigo-500 hover:text-indigo-300 transition-all">
+        className={`w-full mt-3 py-2 rounded-xl text-xs font-semibold border transition-all ${theme === 'dark'
+          ? 'border-[#1e2a45] text-slate-400 hover:border-indigo-500 hover:text-indigo-300'
+          : 'border-gray-300 text-slate-600 hover:border-indigo-500 hover:text-indigo-600'
+        }`}>
         View Bookings →
       </button>
     </div>

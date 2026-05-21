@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from '../AuthContext';
+import { useTheme } from '../ThemeContext';
 import { getRooms, getUsers, getBookings, cancelBooking, updateBooking, checkInBooking, checkOutBooking } from '../api';
 import { PageHeader, SectionHeader, EmptyState } from '../components/ui';
 import RoomCard from '../components/RoomCard';
@@ -11,6 +12,7 @@ import { useLocation } from "../LocationContext";
 export default function BookingsPage() {
   const { location } = useLocation();
   const { user, isAdmin } = useAuth();
+  const { theme } = useTheme();
   const [rooms, setRooms] = useState([]);
   const [bookings, setBookings] = useState([]);
   const [users, setUsers] = useState([]);
@@ -164,10 +166,13 @@ export default function BookingsPage() {
       <div className="flex gap-6">
 
         {/* Filters Sidebar */}
-        <div className="w-[260px] shrink-0 p-4 rounded-2xl bg-gradient-to-br from-[#0f1420] to-[#161c2e] border border-[#1e2a45]">
+        <div className={`w-[260px] shrink-0 p-4 rounded-2xl ${theme === 'dark'
+          ? 'bg-gradient-to-br from-[#0f1420] to-[#161c2e] border-[#1e2a45]'
+          : 'bg-gradient-to-br from-gray-50 to-gray-100 border-gray-200'
+        } border`}>
 
           <div className="flex items-center justify-between mb-4">
-            <span className="font-bold text-indigo-400">⚙ Filters</span>
+            <span className={`font-bold ${theme === 'dark' ? 'text-indigo-400' : 'text-indigo-600'}`}>⚙ Filters</span>
             <button
               onClick={() => {
                 setSearch("");
@@ -175,7 +180,7 @@ export default function BookingsPage() {
                 setCapacityFilter("any");
                 setAmenityFilters([]);
               }}
-              className="text-xs text-slate-400 hover:text-rose-400"
+              className={`text-xs ${theme === 'dark' ? 'text-slate-400 hover:text-rose-400' : 'text-slate-600 hover:text-rose-600'}`}
             >
               Reset
             </button>
@@ -183,22 +188,28 @@ export default function BookingsPage() {
 
           {/* Search */}
           <div className="mb-4">
-            <label className="block text-xs text-slate-500 mb-1">SEARCH</label>
+            <label className={`block text-xs ${theme === 'dark' ? 'text-slate-500' : 'text-slate-600'} mb-1`}>SEARCH</label>
             <input
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder="Name or feature..."
-              className="w-full px-3 py-2 rounded-xl bg-[#0a0f1e] border border-[#1e2a45] text-slate-100 text-sm"
+              className={`w-full px-3 py-2 rounded-xl ${theme === 'dark'
+                ? 'bg-[#0a0f1e] border-[#1e2a45] text-slate-100'
+                : 'bg-white border-gray-300 text-slate-900'
+              } border text-sm`}
             />
           </div>
 
           {/* Status */}
           <div className="mb-4">
-            <label className="block text-xs text-slate-500 mb-1">STATUS</label>
+            <label className={`block text-xs ${theme === 'dark' ? 'text-slate-500' : 'text-slate-600'} mb-1`}>STATUS</label>
             <select
               value={statusFilter}
               onChange={e => setStatusFilter(e.target.value)}
-              className="w-full px-3 py-2 rounded-xl bg-[#0a0f1e] border border-[#1e2a45] text-slate-100 text-sm"
+              className={`w-full px-3 py-2 rounded-xl ${theme === 'dark'
+                ? 'bg-[#0a0f1e] border-[#1e2a45] text-slate-100'
+                : 'bg-white border-gray-300 text-slate-900'
+              } border text-sm`}
             >
               <option value="all">All Statuses</option>
               <option value="active">Active</option>
@@ -208,11 +219,14 @@ export default function BookingsPage() {
 
           {/* Capacity */}
           <div className="mb-4">
-            <label className="block text-xs text-slate-500 mb-1">CAPACITY</label>
+            <label className={`block text-xs ${theme === 'dark' ? 'text-slate-500' : 'text-slate-600'} mb-1`}>CAPACITY</label>
             <select
               value={capacityFilter}
               onChange={e => setCapacityFilter(e.target.value)}
-              className="w-full px-3 py-2 rounded-xl bg-[#0a0f1e] border border-[#1e2a45] text-slate-100 text-sm"
+              className={`w-full px-3 py-2 rounded-xl ${theme === 'dark'
+                ? 'bg-[#0a0f1e] border-[#1e2a45] text-slate-100'
+                : 'bg-white border-gray-300 text-slate-900'
+              } border text-sm`}
             >
               <option value="any">Any</option>
               <option value="small">1–4</option>
@@ -223,10 +237,10 @@ export default function BookingsPage() {
 
           {/* Amenities */}
           <div>
-            <label className="block text-xs text-slate-500 mb-2">AMENITIES</label>
+            <label className={`block text-xs ${theme === 'dark' ? 'text-slate-500' : 'text-slate-600'} mb-2`}>AMENITIES</label>
             <div className="space-y-2">
               {AMENITIES.map(a => (
-                <label key={a} className="flex items-center gap-2 text-sm text-slate-300">
+                <label key={a} className={`flex items-center gap-2 text-sm ${theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
                   <input
                     type="checkbox"
                     checked={amenityFilters.includes(a)}

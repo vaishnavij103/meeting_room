@@ -1,5 +1,6 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../AuthContext';
+import { useTheme } from '../ThemeContext';
 import { healthCheck } from '../api';
 import { useState, useEffect } from 'react';
 import {
@@ -17,6 +18,7 @@ const NAV = [
 
 export default function Layout({ children }) {
   const { user, isAdmin, logout } = useAuth();
+  const { theme } = useTheme();
   const navigate = useNavigate();
   const [apiOk, setApiOk] = useState(true);
   const [location, setLocation] = useState("Pune");
@@ -33,12 +35,12 @@ export default function Layout({ children }) {
   const handleLogout = () => { logout(); navigate('/login'); };
 
   return (
-    <div className="flex h-screen overflow-hidden bg-[#080b14]">
+    <div className={`flex h-screen overflow-hidden ${theme === "dark" ? "bg-[#080b14]" : "bg-gray-50"}`}>
 
       {/* Sidebar */}
-      <aside className="w-64 flex-shrink-0 flex flex-col border-r border-[#1e2a45] bg-gradient-to-b from-[#0a0f1e] to-[#080b14]">
+      <aside className={`w-64 flex-shrink-0 flex flex-col border-r ${theme === "dark" ? "border-[#1e2a45] bg-gradient-to-b from-[#0a0f1e] to-[#080b14]" : "border-gray-200 bg-white"}`}>
         {/* Logo */}
-        <div className="px-5 pt-6 pb-4 border-b border-[#1e2a45]">
+        <div className={`px-5 pt-6 pb-4 border-b ${theme === "dark" ? "border-[#1e2a45]" : "border-gray-200"}`}>
           <div className="flex items-center gap-3">
             <img
               src={logo}
@@ -47,25 +49,25 @@ export default function Layout({ children }) {
             />
           </div>
           <div className="leading-tight">
-            <h1 className="text-base mt-4 font-semibold text-slate-500">
+            <h1 className={`text-base mt-4 font-semibold ${theme === "dark" ? "text-slate-500" : "text-slate-700"}`}>
               RoomBook
             </h1>
-            <p className="text-[0.65rem] tracking-[0.2em] text-slate-500 uppercase">
+            <p className={`text-[0.65rem] tracking-[0.2em] ${theme === "dark" ? "text-slate-500" : "text-slate-600"} uppercase`}>
               Meeting Room Manager
             </p>
           </div>
         </div>
 
         {/* User info */}
-        <div className="mx-3 mt-4 mb-2 p-3 rounded-xl bg-indigo-500/5 border border-indigo-500/15">
+        <div className={`mx-3 mt-4 mb-2 p-3 rounded-xl ${theme === "dark" ? "bg-indigo-500/5 border border-indigo-500/15" : "bg-indigo-50 border border-indigo-200"}`}>
           <div className="flex items-center gap-3">
 
             <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-xs font-bold">
               {initials}
             </div>
             <div className="flex-1 min-w-0">
-              <div className="text-sm font-semibold text-slate-100 truncate">{user?.name}</div>
-              <div className="text-[0.65rem] text-slate-500">
+              <div className={`text-sm font-semibold ${theme === "dark" ? "text-slate-100" : "text-slate-900"} truncate`}>{user?.name}</div>
+              <div className={`text-[0.65rem] ${theme === "dark" ? "text-slate-500" : "text-slate-600"}`}>
                 {isAdmin ? '🛡️ Admin' : '👤 Employee'}
               </div>
             </div>
@@ -74,7 +76,7 @@ export default function Layout({ children }) {
 
         {/* Nav */}
         <div className="px-3 mt-2">
-          <div className="text-[0.65rem] uppercase tracking-widest text-slate-600 font-semibold px-3 py-2">
+          <div className={`text-[0.65rem] uppercase tracking-widest ${theme === "dark" ? "text-slate-600" : "text-slate-500"} font-semibold px-3 py-2`}>
             Navigation
           </div>
           <nav className="space-y-0.5">
@@ -85,8 +87,12 @@ export default function Layout({ children }) {
                 end={n.to === '/'}
                 className={({ isActive }) =>
                   `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 group ${isActive
-                    ? 'bg-gradient-to-r from-indigo-500/15 to-purple-500/10 text-indigo-400 border border-indigo-500/20'
-                    : 'text-slate-500 hover:bg-indigo-500/5 hover:text-indigo-300 border border-transparent'
+                    ? theme === "dark" 
+                      ? 'bg-gradient-to-r from-indigo-500/15 to-purple-500/10 text-indigo-400 border border-indigo-500/20'
+                      : 'bg-gradient-to-r from-indigo-100 to-purple-50 text-indigo-600 border border-indigo-300'
+                    : theme === "dark"
+                      ? 'text-slate-500 hover:bg-indigo-500/5 hover:text-indigo-300 border border-transparent'
+                      : 'text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 border border-transparent'
                   }`
                 }
               >
@@ -109,8 +115,9 @@ export default function Layout({ children }) {
 
         {/* Health */}
         <div className="px-3 mb-2">
-          <div className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium ${apiOk ? 'bg-emerald-500/8 border border-emerald-500/20 text-emerald-400'
-            : 'bg-rose-500/8 border border-rose-500/20 text-rose-400'
+          <div className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium ${apiOk 
+            ? theme === "dark" ? 'bg-emerald-500/8 border border-emerald-500/20 text-emerald-400' : 'bg-emerald-100 border border-emerald-300 text-emerald-700'
+            : theme === "dark" ? 'bg-rose-500/8 border border-rose-500/20 text-rose-400' : 'bg-rose-100 border border-rose-300 text-rose-700'
             }`}>
             <div className={`w-2 h-2 rounded-full ${apiOk ? 'bg-emerald-400 animate-blink' : 'bg-rose-400'}`} />
             {apiOk ? 'API Connected' : 'API Unreachable'}
@@ -121,13 +128,15 @@ export default function Layout({ children }) {
         <div className="px-3 mb-4">
           <button
             onClick={handleLogout}
-            className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm text-slate-500 hover:text-rose-400 hover:bg-rose-500/5 border border-transparent hover:border-rose-500/20 transition-all"
+            className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm transition-all border ${theme === "dark" 
+              ? "text-slate-500 hover:text-rose-400 hover:bg-rose-500/5 border-transparent hover:border-rose-500/20" 
+              : "text-slate-600 hover:text-rose-600 hover:bg-rose-50 border-transparent hover:border-rose-200"}`}
           >
             <LogOut size={16} /> Logout
           </button>
         </div>
 
-        <div className="px-5 pb-4 text-[0.65rem] text-slate-700">v4.0 · Apexon Room Booking</div>
+        <div className={`px-5 pb-4 text-[0.65rem] ${theme === "dark" ? "text-slate-700" : "text-slate-500"}`}>v4.0 · Apexon Room Booking</div>
       </aside>
 
       {/* Main content */}

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTheme } from '../ThemeContext';
 import { useAuth } from '../AuthContext';
 import { login, register } from '../api';
 
@@ -7,6 +8,7 @@ const DEPARTMENTS = ['', 'Engineering', 'Design', 'Product', 'Marketing', 'Sales
 
 export default function LoginPage() {
   const { user, loginUser } = useAuth();
+  const { theme } = useTheme();
   const navigate = useNavigate();
   const [tab, setTab] = useState('login');
   const [error, setError] = useState('');
@@ -55,7 +57,10 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#080b14] via-[#0a0f1e] to-[#080b14]">
+    <div className={`min-h-screen flex items-center justify-center ${theme === 'dark' 
+      ? 'bg-gradient-to-br from-[#080b14] via-[#0a0f1e] to-[#080b14]'
+      : 'bg-gradient-to-br from-gray-100 via-white to-gray-50'
+    }`}>
       <div className="w-full max-w-md animate-fade-up">
         {/* Logo */}
         <div className="text-center mb-8">
@@ -69,9 +74,12 @@ export default function LoginPage() {
         </div>
 
         {/* Card */}
-        <div className="bg-gradient-to-br from-[#0f1420] to-[#161c2e] border border-[#1e2a45] rounded-2xl p-6">
+        <div className={`${theme === 'dark'
+          ? 'bg-gradient-to-br from-[#0f1420] to-[#161c2e] border-[#1e2a45]'
+          : 'bg-gradient-to-br from-white to-gray-50 border-gray-200'
+        } border rounded-2xl p-6`}>
           {/* Tabs */}
-          <div className="flex gap-1 mb-6 bg-[#080b14] rounded-xl p-1">
+          <div className={`flex gap-1 mb-6 ${theme === 'dark' ? 'bg-[#080b14]' : 'bg-gray-100'} rounded-xl p-1`}>
             {['login', 'register'].map(t => (
               <button
                 key={t}
@@ -88,7 +96,10 @@ export default function LoginPage() {
           </div>
 
           {error && (
-            <div className="mb-4 px-4 py-2.5 rounded-xl bg-rose-500/8 border border-rose-500/20 text-rose-400 text-sm">
+            <div className={`mb-4 px-4 py-2.5 rounded-xl ${theme === 'dark'
+              ? 'bg-rose-500/8 border-rose-500/20 text-rose-400'
+              : 'bg-rose-100 border-rose-300 text-rose-700'
+            } border text-sm`}>
               ❌ {error}
             </div>
           )}
@@ -96,16 +107,22 @@ export default function LoginPage() {
           {tab === 'login' ? (
             <form onSubmit={handleLogin} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Email</label>
+                <label className={`block text-xs font-semibold ${theme === 'dark' ? 'text-slate-500' : 'text-slate-600'} uppercase tracking-wider mb-1.5`}>Email</label>
                 <input type="email" value={email} onChange={e => setEmail(e.target.value)}
                   placeholder="you@apexon.com"
-                  className="w-full px-4 py-2.5 rounded-xl bg-[#0a0f1e] border border-[#1e2a45] text-slate-100 text-sm placeholder-slate-600 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/20 outline-none transition-all" />
+                  className={`w-full px-4 py-2.5 rounded-xl ${theme === 'dark'
+                    ? 'bg-[#0a0f1e] border-[#1e2a45] text-slate-100 placeholder-slate-600 focus:border-indigo-500 focus:ring-indigo-500/20'
+                    : 'bg-white border-gray-300 text-slate-900 placeholder-slate-400 focus:border-indigo-500 focus:ring-indigo-100'
+                  } border text-sm focus:ring-1 outline-none transition-all`} />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Password</label>
+                <label className={`block text-xs font-semibold ${theme === 'dark' ? 'text-slate-500' : 'text-slate-600'} uppercase tracking-wider mb-1.5`}>Password</label>
                 <input type="password" value={password} onChange={e => setPassword(e.target.value)}
                   placeholder="Enter your password"
-                  className="w-full px-4 py-2.5 rounded-xl bg-[#0a0f1e] border border-[#1e2a45] text-slate-100 text-sm placeholder-slate-600 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/20 outline-none transition-all" />
+                  className={`w-full px-4 py-2.5 rounded-xl ${theme === 'dark'
+                    ? 'bg-[#0a0f1e] border-[#1e2a45] text-slate-100 placeholder-slate-600 focus:border-indigo-500 focus:ring-indigo-500/20'
+                    : 'bg-white border-gray-300 text-slate-900 placeholder-slate-400 focus:border-indigo-500 focus:ring-indigo-100'
+                  } border text-sm focus:ring-1 outline-none transition-all`} />
               </div>
               <button type="submit" disabled={loading}
                 className="w-full py-3 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-500 text-white font-bold text-sm hover:from-indigo-600 hover:to-purple-600 transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-indigo-500/25 disabled:opacity-50">
@@ -116,29 +133,41 @@ export default function LoginPage() {
             <form onSubmit={handleRegister} className="space-y-4">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Full Name</label>
+                  <label className={`block text-xs font-semibold ${theme === 'dark' ? 'text-slate-500' : 'text-slate-600'} uppercase tracking-wider mb-1.5`}>Full Name</label>
                   <input type="text" value={regName} onChange={e => setRegName(e.target.value)}
                     placeholder="Alex Johnson"
-                    className="w-full px-4 py-2.5 rounded-xl bg-[#0a0f1e] border border-[#1e2a45] text-slate-100 text-sm placeholder-slate-600 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/20 outline-none transition-all" />
+                    className={`w-full px-4 py-2.5 rounded-xl ${theme === 'dark'
+                      ? 'bg-[#0a0f1e] border-[#1e2a45] text-slate-100 placeholder-slate-600 focus:border-indigo-500 focus:ring-indigo-500/20'
+                      : 'bg-white border-gray-300 text-slate-900 placeholder-slate-400 focus:border-indigo-500 focus:ring-indigo-100'
+                    } border text-sm focus:ring-1 outline-none transition-all`} />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Email</label>
+                  <label className={`block text-xs font-semibold ${theme === 'dark' ? 'text-slate-500' : 'text-slate-600'} uppercase tracking-wider mb-1.5`}>Email</label>
                   <input type="email" value={regEmail} onChange={e => setRegEmail(e.target.value)}
                     placeholder="you@apexon.com"
-                    className="w-full px-4 py-2.5 rounded-xl bg-[#0a0f1e] border border-[#1e2a45] text-slate-100 text-sm placeholder-slate-600 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/20 outline-none transition-all" />
+                    className={`w-full px-4 py-2.5 rounded-xl ${theme === 'dark'
+                      ? 'bg-[#0a0f1e] border-[#1e2a45] text-slate-100 placeholder-slate-600 focus:border-indigo-500 focus:ring-indigo-500/20'
+                      : 'bg-white border-gray-300 text-slate-900 placeholder-slate-400 focus:border-indigo-500 focus:ring-indigo-100'
+                    } border text-sm focus:ring-1 outline-none transition-all`} />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Password</label>
+                  <label className={`block text-xs font-semibold ${theme === 'dark' ? 'text-slate-500' : 'text-slate-600'} uppercase tracking-wider mb-1.5`}>Password</label>
                   <input type="password" value={regPassword} onChange={e => setRegPassword(e.target.value)}
                     placeholder="Min 4 characters"
-                    className="w-full px-4 py-2.5 rounded-xl bg-[#0a0f1e] border border-[#1e2a45] text-slate-100 text-sm placeholder-slate-600 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/20 outline-none transition-all" />
+                    className={`w-full px-4 py-2.5 rounded-xl ${theme === 'dark'
+                      ? 'bg-[#0a0f1e] border-[#1e2a45] text-slate-100 placeholder-slate-600 focus:border-indigo-500 focus:ring-indigo-500/20'
+                      : 'bg-white border-gray-300 text-slate-900 placeholder-slate-400 focus:border-indigo-500 focus:ring-indigo-100'
+                    } border text-sm focus:ring-1 outline-none transition-all`} />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Department</label>
+                  <label className={`block text-xs font-semibold ${theme === 'dark' ? 'text-slate-500' : 'text-slate-600'} uppercase tracking-wider mb-1.5`}>Department</label>
                   <select value={regDept} onChange={e => setRegDept(e.target.value)}
-                    className="w-full px-4 py-2.5 rounded-xl bg-[#0a0f1e] border border-[#1e2a45] text-slate-100 text-sm focus:border-indigo-500 outline-none transition-all">
+                    className={`w-full px-4 py-2.5 rounded-xl ${theme === 'dark'
+                      ? 'bg-[#0a0f1e] border-[#1e2a45] text-slate-100 focus:border-indigo-500'
+                      : 'bg-white border-gray-300 text-slate-900 focus:border-indigo-500'
+                    } border text-sm outline-none transition-all`}>
                     <option value="">Select...</option>
                     {DEPARTMENTS.filter(Boolean).map(d => <option key={d} value={d}>{d}</option>)}
                   </select>

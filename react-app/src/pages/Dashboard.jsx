@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../AuthContext';
+import { useTheme } from '../ThemeContext';
 import { getStats, getRooms, getBookings, getRoomAvailability, createBooking } from '../api';
 import { StatCard, PageHeader, SectionHeader, EmptyState } from '../components/ui';
 import BookingCard from '../components/BookingCard';
@@ -10,6 +11,7 @@ import { useLocation } from "../LocationContext";
 export default function Dashboard() {
   const { location } = useLocation();
   const { user, isAdmin } = useAuth();
+  const { theme } = useTheme();
   const [stats, setStats] = useState({});
   const [rooms, setRooms] = useState([]);
   const [bookings, setBookings] = useState([]);
@@ -135,16 +137,16 @@ export default function Dashboard() {
 
   const buildDateTime = (date, time) => `${date}T${time}:00`;
 
-  if (loading) return <div className="text-center py-20 text-slate-500">Loading...</div>;
+  if (loading) return <div className={`text-center py-20 ${theme === 'dark' ? 'text-slate-500' : 'text-slate-600'}`}>Loading...</div>;
 
   return (
     <div className="animate-fade-up">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-2xl font-extrabold text-slate-100 tracking-tight">
+        <h1 className={`text-2xl font-extrabold ${theme === 'dark' ? 'text-slate-100' : 'text-slate-900'} tracking-tight`}>
           {greeting}, {firstName} 👋
         </h1>
-        <p className="text-sm text-slate-500 mt-1">{todayStr}</p>
+        <p className={`text-sm ${theme === 'dark' ? 'text-slate-500' : 'text-slate-600'} mt-1`}>{todayStr}</p>
       </div>
 
       {/* KPI Row */}
@@ -163,11 +165,11 @@ export default function Dashboard() {
         <div className="col-span-3">
           <SectionHeader title="⚡ Instant Book" />
 
-          <div className="bg-gradient-to-br from-indigo-500/8 to-purple-500/5 border border-indigo-500/20 rounded-2xl p-5 mb-6">
+          <div className={`${theme === 'dark' ? 'bg-gradient-to-br from-indigo-500/8 to-purple-500/5 border-indigo-500/20' : 'bg-gradient-to-br from-indigo-100 to-purple-50 border-indigo-300'} border rounded-2xl p-5 mb-6`}>
             {/* Room & Date */}
             <div className="grid grid-cols-2 gap-3 mb-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-500 uppercase mb-1.5">Room</label>
+                <label className={`block text-xs font-semibold ${theme === 'dark' ? 'text-slate-500' : 'text-slate-600'} uppercase mb-1.5`}>Room</label>
                 <select
                   value={ibRoom}
                   onChange={e => {
@@ -175,7 +177,10 @@ export default function Dashboard() {
                     setIbStart(null);
                     setIbEnd(null);
                   }}
-                  className="w-full px-4 py-2.5 rounded-xl bg-[#0a0f1e] border border-[#1e2a45] text-slate-100 text-sm"
+                  className={`w-full px-4 py-2.5 rounded-xl ${theme === 'dark'
+                    ? 'bg-[#0a0f1e] border-[#1e2a45] text-slate-100'
+                    : 'bg-white border-gray-300 text-slate-900'
+                  } border text-sm`}
                 >
                   {activeRooms.map(r => (
                     <option key={r.room_id} value={r.room_id}>{r.name}</option>
@@ -184,7 +189,7 @@ export default function Dashboard() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-500 uppercase mb-1.5">Date</label>
+                <label className={`block text-xs font-semibold ${theme === 'dark' ? 'text-slate-500' : 'text-slate-600'} uppercase mb-1.5`}>Date</label>
                 <input
                   type="date"
                   value={ibDate}
@@ -193,16 +198,23 @@ export default function Dashboard() {
                     setIbStart(null);
                     setIbEnd(null);
                   }}
-                  className="w-full px-4 py-2.5 rounded-xl bg-[#0a0f1e] border border-[#1e2a45] text-slate-100 text-sm"
+                  className={`w-full px-4 py-2.5 rounded-xl ${theme === 'dark'
+                    ? 'bg-[#0a0f1e] border-[#1e2a45] text-slate-100'
+                    : 'bg-white border-gray-300 text-slate-900'
+                  } border text-sm`}
                 />
               </div>
             </div>
 
             {/* Messages */}
             {ibMsg.text && (
-              <div className={`mb-3 px-4 py-2 rounded-xl text-sm ${ibMsg.type === 'success'
-                ? 'bg-emerald-500/8 border border-emerald-500/20 text-emerald-400'
-                : 'bg-rose-500/8 border border-rose-500/20 text-rose-400'
+              <div className={`mb-3 px-4 py-2 rounded-xl text-sm border ${ibMsg.type === 'success'
+                ? theme === 'dark'
+                  ? 'bg-emerald-500/8 border-emerald-500/20 text-emerald-400'
+                  : 'bg-emerald-100 border-emerald-300 text-emerald-700'
+                : theme === 'dark'
+                  ? 'bg-rose-500/8 border-rose-500/20 text-rose-400'
+                  : 'bg-rose-100 border-rose-300 text-rose-700'
                 }`}>
                 {ibMsg.type === 'success' ? '✅' : '❌'} {ibMsg.text}
               </div>
@@ -210,9 +222,9 @@ export default function Dashboard() {
 
             {/* Slots */}
             {ibLoading ? (
-              <div className="text-center py-4 text-slate-500 text-sm">Loading slots...</div>
+              <div className={`text-center py-4 ${theme === 'dark' ? 'text-slate-500' : 'text-slate-600'} text-sm`}>Loading slots...</div>
             ) : ibSlots.length === 0 ? (
-              <div className="text-center py-4 text-slate-500 text-sm">
+              <div className={`text-center py-4 ${theme === 'dark' ? 'text-slate-500' : 'text-slate-600'} text-sm`}>
                 No available slots. Try another room or date.
               </div>
             ) : (
@@ -221,39 +233,45 @@ export default function Dashboard() {
                 <div className="grid grid-cols-2 gap-6 mb-4">
 
                   {/* START TIME */}
-                  <div className="bg-[#0b1224] border border-[#1e2a45] rounded-2xl p-4">
-                    <div className="text-sm font-semibold text-slate-400 mb-2">
+                  <div className={`${theme === 'dark' ? 'bg-[#0b1224] border-[#1e2a45]' : 'bg-gray-50 border-gray-300'} border rounded-2xl p-4`}>
+                    <div className={`text-sm font-semibold ${theme === 'dark' ? 'text-slate-400' : 'text-slate-600'} mb-2`}>
                       Start Time
                     </div>
 
-                    <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-[#070c1a] border border-[#1e2a45] mb-3">
-                      <span className="text-slate-500">🕒</span>
+                    <div className={`flex items-center gap-3 px-4 py-3 rounded-xl ${theme === 'dark'
+                      ? 'bg-[#070c1a] border-[#1e2a45]'
+                      : 'bg-white border-gray-300'
+                    } border mb-3`}>
+                      <span className={theme === 'dark' ? 'text-slate-500' : 'text-slate-600'}>🕒</span>
                       <input
                         type="time"
                         value={ibStart ? ibStart.slice(11, 16) : ""}
                         onChange={e =>
                           setIbStart(buildDateTime(ibDate, e.target.value))
                         }
-                        className="bg-transparent w-full text-slate-100 text-sm outline-none"
+                        className={`bg-transparent w-full ${theme === 'dark' ? 'text-slate-100' : 'text-slate-900'} text-sm outline-none`}
                       />
                     </div>
                   </div>
 
                   {/* END TIME */}
-                  <div className="bg-[#0b1224] border border-[#1e2a45] rounded-2xl p-4">
-                    <div className="text-sm font-semibold text-slate-400 mb-2">
+                  <div className={`${theme === 'dark' ? 'bg-[#0b1224] border-[#1e2a45]' : 'bg-gray-50 border-gray-300'} border rounded-2xl p-4`}>
+                    <div className={`text-sm font-semibold ${theme === 'dark' ? 'text-slate-400' : 'text-slate-600'} mb-2`}>
                       End Time
                     </div>
 
-                    <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-[#070c1a] border border-[#1e2a45] mb-3">
-                      <span className="text-slate-500">🕒</span>
+                    <div className={`flex items-center gap-3 px-4 py-3 rounded-xl ${theme === 'dark'
+                      ? 'bg-[#070c1a] border-[#1e2a45]'
+                      : 'bg-white border-gray-300'
+                    } border mb-3`}>
+                      <span className={theme === 'dark' ? 'text-slate-500' : 'text-slate-600'}>🕒</span>
                       <input
                         type="time"
                         value={ibEnd ? ibEnd.slice(11, 16) : ""}
                         onChange={e =>
                           setIbEnd(buildDateTime(ibDate, e.target.value))
                         }
-                        className="bg-transparent w-full text-slate-100 text-sm outline-none"
+                        className={`bg-transparent w-full ${theme === 'dark' ? 'text-slate-100' : 'text-slate-900'} text-sm outline-none`}
                       />
                     </div>
                   </div>
@@ -265,8 +283,11 @@ export default function Dashboard() {
             {/* Confirm */}
             {ibStart && ibEnd && (
               <div className="animate-fade-in">
-                <div className="px-4 py-2.5 rounded-xl bg-emerald-500/8 border border-emerald-500/20 mb-3">
-                  <span className="text-sm font-semibold text-emerald-400">
+                <div className={`px-4 py-2.5 rounded-xl ${theme === 'dark'
+                  ? 'bg-emerald-500/8 border-emerald-500/20'
+                  : 'bg-emerald-100 border-emerald-300'
+                } border mb-3`}>
+                  <span className={`text-sm font-semibold ${theme === 'dark' ? 'text-emerald-400' : 'text-emerald-700'}`}>
                     📅 {roomMap[ibRoom]} · {ibDate} · {ibStart.slice(11, 16)} – {ibEnd.slice(11, 16)}
                   </span>
                 </div>
@@ -277,7 +298,10 @@ export default function Dashboard() {
                     value={ibTitle}
                     onChange={e => setIbTitle(e.target.value)}
                     placeholder="Meeting title (optional)"
-                    className="flex-1 px-4 py-2.5 rounded-xl bg-[#0a0f1e] border border-[#1e2a45] text-slate-100 text-sm"
+                    className={`flex-1 px-4 py-2.5 rounded-xl ${theme === 'dark'
+                      ? 'bg-[#0a0f1e] border-[#1e2a45] text-slate-100'
+                      : 'bg-white border-gray-300 text-slate-900'
+                    } border text-sm`}
                   />
 
                   <button
@@ -293,7 +317,10 @@ export default function Dashboard() {
                       setIbStart(null);
                       setIbEnd(null);
                     }}
-                    className="px-3 py-2.5 rounded-xl border border-[#1e2a45] text-slate-400 text-sm"
+                    className={`px-3 py-2.5 rounded-xl border text-sm ${theme === 'dark'
+                      ? 'border-[#1e2a45] text-slate-400'
+                      : 'border-gray-300 text-slate-600'
+                    }`}
                   >
                     ✖
                   </button>
