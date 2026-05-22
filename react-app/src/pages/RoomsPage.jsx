@@ -1,11 +1,146 @@
 import { useState, useEffect, useCallback ,useMemo} from 'react';
-import { getRooms, createRoom, updateRoom, deactivateRoom, getRoomAvailability } from '../api';
+import { getRooms, createRoom, updateRoom, deactivateRoom, getRoomAvailability , importRoomsFromCSV } from '../api';
 import { useTheme } from '../ThemeContext';
 import { PageHeader, SectionHeader, EmptyState, Input, Select, Button } from '../components/ui';
 import RoomCard from '../components/RoomCard';
 import { useLocation } from "../LocationContext";
 
 const AMENITIES = ['Projector', 'Whiteboard', 'Video Conferencing', 'TV Screen', 'Phone', 'Standing Desk', 'Natural Light', 'Air Conditioning'];
+
+function RoomImportForm({ onSuccess, onCancel }) {
+  const { theme } = useTheme();
+  const [file, setFile] = useState(null);
+  const [fileLoading, setFileLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [results, setResults] = useState(null);
+
+  const handleFileChange = (e) => {
+    const f = e.target.files?.[0];
+    if (f && !f.name.endsWith('.csv')) {
+      setError('Please select a CSV file');
+      setFileLoading(false);
+      return;
+    }
+    setError('');
+    setFile(f);
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!file) { setError('Please select a file'); return; }
+
+    setFileLoading(true);
+    try {
+      const result = await importRoomsFromCSV(file);
+      setResults(result);
+      if (result.created > 0) {
+        setTimeout(() => { onSuccess?.(); }, 2000);
+      }
+    } catch (err) {
+      setError(err.detail || err.message);
+    } finally {
+      setFileLoading(false);
+    }
+  };
+
+  if (results) {
+    return (
+      <div className={`p-5 rounded-2xl ${theme === 'dark'
+        ? 'bg-gradient-to-br from-[#0f1420] to-[#161c2e] border-[#1e2a45]'
+        : 'bg-gradient-to-br from-gray-50 to-gray-100 border-gray-200'
+      } border mb-4 relative`}>
+        <div className="absolute top-0 left-6 right-6 h-px bg-gradient-to-r from-transparent via-green-500 to-transparent" />
+        <h3 className={`text-base font-bold ${theme === 'dark' ? 'text-slate-100' : 'text-slate-900'} mb-4`}>✅ Import Complete</h3>
+        
+        <div className="space-y-3 mb-4">
+          <div className={`px-4 py-2 rounded-xl text-sm ${theme === 'dark' ? 'bg-green-500/8 border-green-500/20 text-green-400 border' : 'bg-green-100 border-green-300 text-green-700 border'}`}>
+            ✓ <span className="font-semibold">{results.created}</span> rooms created
+          </div>
+          {results.skipped > 0 && (
+            <div className={`px-4 py-2 rounded-xl text-sm ${theme === 'dark' ? 'bg-amber-500/8 border-amber-500/20 text-amber-400 border' : 'bg-amber-100 border-amber-300 text-amber-700 border'}`}>
+              ⏩ <span className="font-semibold">{results.skipped}</span> rooms skipped (duplicates)
+            </div>
+          )}
+          {results.failed > 0 && (
+            <div className={`px-4 py-2 rounded-xl text-sm ${theme === 'dark' ? 'bg-rose-500/8 border-rose-500/20 text-rose-400 border' : 'bg-rose-100 border-rose-300 text-rose-700 border'}`}>
+              ✕ <span className="font-semibold">{results.failed}</span> rooms failed
+              {results.failed_rooms.length > 0 && (
+                <div className={`mt-2 text-xs space-y-1 max-h-32 overflow-y-auto ${theme === 'dark' ? 'text-rose-300' : 'text-rose-700'}`}>
+                  {results.failed_rooms.slice(0, 5).map((r, i) => (
+                    <div key={i}>{r.name}: {r.reason}</div>
+                  ))}
+                  {results.failed_rooms.length > 5 && <div>... and {results.failed_rooms.length - 5} more</div>}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {results.created_rooms.length > 0 && (
+          <div className={`text-xs space-y-1 mb-4 max-h-32 overflow-y-auto p-3 rounded-xl ${theme === 'dark' ? 'bg-[#0a0f1e] border-[#1e2a45]' : 'bg-gray-50 border-gray-200'} border`}>
+            <div className={`font-semibold mb-2 ${theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>Created rooms:</div>
+            {results.created_rooms.slice(0, 5).map((r, i) => (
+              <div key={i} className={theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}>
+                • {r.name} ({r.location})
+              </div>
+            ))}
+            {results.created_rooms.length > 5 && (
+              <div className={theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}>
+                ... and {results.created_rooms.length - 5} more
+              </div>
+            )}
+          </div>
+        )}
+
+        <button onClick={() => onCancel?.()} className={`w-full px-4 py-2 rounded-xl font-semibold transition-all ${theme === 'dark'
+          ? 'bg-indigo-600 hover:bg-indigo-700 text-white'
+          : 'bg-indigo-600 hover:bg-indigo-700 text-white'
+        }`}>
+          Close
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className={`p-5 rounded-2xl ${theme === 'dark'
+      ? 'bg-gradient-to-br from-[#0f1420] to-[#161c2e] border-[#1e2a45]'
+      : 'bg-gradient-to-br from-gray-50 to-gray-100 border-gray-200'
+    } border mb-4 relative`}>
+      <div className="absolute top-0 left-6 right-6 h-px bg-gradient-to-r from-transparent via-indigo-500 to-transparent" />
+      <h3 className={`text-base font-bold ${theme === 'dark' ? 'text-slate-100' : 'text-slate-900'} mb-4`}>📊 Import Rooms from CSV</h3>
+      {error && <div className={`mb-3 px-4 py-2 rounded-xl ${theme === 'dark'
+        ? 'bg-rose-500/8 border-rose-500/20 text-rose-400'
+        : 'bg-rose-100 border-rose-300 text-rose-700'
+      } border text-sm`}>❌ {error}</div>}
+      <form onSubmit={handleSubmit}>
+        <div className="mb-4">
+          <label className={`block text-sm font-medium mb-2 ${theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
+            📁 Select CSV File
+          </label>
+          <input type="file" accept=".csv" onChange={handleFileChange} disabled={fileLoading}
+            className={`w-full px-4 py-2 rounded-xl text-sm border focus:outline-none transition-all ${theme === 'dark'
+              ? 'bg-[#0a0f1e] border-[#1e2a45] text-slate-100 file:text-slate-400'
+              : 'bg-white border-gray-300 text-slate-900 file:text-slate-600'
+            } ${file ? (theme === 'dark' ? 'border-green-500/30' : 'border-green-300') : ''}`} />
+          {file && <div className={`mt-1 text-xs ${theme === 'dark' ? 'text-green-400' : 'text-green-600'}`}>
+            ✓ {file.name}
+          </div>}
+        </div>
+        <div className={`mb-4 p-3 rounded-xl text-xs ${theme === 'dark' ? 'bg-[#0a0f1e] border-[#1e2a45] text-slate-400 border' : 'bg-gray-50 border-gray-300 text-slate-600 border'}`}>
+          <div className="font-semibold mb-1">CSV Format:</div>
+          <div>Expected columns: Room Name, Location / Building, Floor, Room Type, Cabin Type, Seating Capacity, Amenities Available, VC Enabled, Power Points</div>
+        </div>
+        <div className="flex gap-2">
+          <Button type="submit" disabled={!file || fileLoading}>
+            {fileLoading ? '⏳ Importing...' : '✅ Import Rooms'}
+          </Button>
+          <Button variant="secondary" type="button" onClick={onCancel} disabled={fileLoading}>✖ Cancel</Button>
+        </div>
+      </form>
+    </div>
+  );
+}
 
 function RoomForm({ existing, onSave, onCancel }) {
   const { theme } = useTheme();
@@ -83,6 +218,7 @@ export default function RoomsPage() {
   const [showForm, setShowForm] = useState(false);
   const [editRoom, setEditRoom] = useState(null);
   const [error, setError] = useState('');
+  const [showImport, setShowImport] = useState(false);
 
   // Availability viewer
   const [availRoom, setAvailRoom] = useState('');
@@ -133,8 +269,25 @@ export default function RoomsPage() {
   return (
     <div className="animate-fade-up">
       <div className="flex items-start justify-between mb-6">
-        <PageHeader title="🏢 Meeting Rooms" subtitle="Manage your workspace rooms, amenities, and availability" />
-        <Button onClick={() => { setShowForm(!showForm); setEditRoom(null); }}>＋ New Room</Button>
+        <PageHeader
+          title="🏢 Meeting Rooms"
+          subtitle="Manage your workspace rooms, amenities, and availability"
+        />
+
+        <div className="flex gap-2">
+          <Button
+            onClick={() => {
+              setShowForm(!showForm);
+              setEditRoom(null);
+            }}
+          >
+            ＋ New Room
+          </Button>
+
+          <Button onClick={() => setShowImport(!showImport)}>
+            📊 Import Rooms
+          </Button>
+        </div>
       </div>
 
       {error && <div className={`mb-4 px-4 py-2 rounded-xl ${theme === 'dark'
@@ -144,6 +297,8 @@ export default function RoomsPage() {
 
       {showForm && <RoomForm onSave={handleCreate} onCancel={() => setShowForm(false)} />}
       {editRoom && <RoomForm existing={editRoom} onSave={handleUpdate} onCancel={() => setEditRoom(null)} />}
+      {showImport && <RoomImportForm onSuccess={() => { setShowImport(false); reload(); }} onCancel={() => setShowImport(false)} />}
+
 
       {/* Summary */}
       <div className={`flex gap-6 mb-5 px-4 py-3 ${theme === 'dark'

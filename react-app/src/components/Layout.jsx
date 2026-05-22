@@ -31,8 +31,6 @@ export default function Layout({ children }) {
     return () => clearInterval(t);
   }, []);
 
-  const initials = user?.name?.split(' ').map(p => p[0]).join('').toUpperCase().slice(0, 2) || '?';
-
   const handleLogout = () => { logout(); navigate('/login'); };
 
   return (
@@ -69,23 +67,6 @@ export default function Layout({ children }) {
           </button>
         </div>
 
-        {/* User info */}
-        <div className={`mx-3 mt-4 mb-2 p-3 rounded-xl ${theme === "dark" ? "bg-indigo-500/5 border border-indigo-500/15" : "bg-indigo-50 border border-indigo-200"}`}>
-          <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-3'}`}>
-            <div className="w-8 h-8 rounded-full flex-shrink-0 bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-xs font-bold text-white">
-              {initials}
-            </div>
-            {!isCollapsed && (
-              <div className="flex-1 min-w-0">
-                <div className={`text-sm font-semibold ${theme === "dark" ? "text-slate-100" : "text-slate-900"} truncate`}>{user?.name}</div>
-                <div className={`text-[0.65rem] ${theme === "dark" ? "text-slate-500" : "text-slate-600"}`}>
-                  {isAdmin ? '🛡️ Admin' : '👤 Employee'}
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-
         {/* Nav */}
         <div className="px-3 mt-2">
           {!isCollapsed && (
@@ -103,7 +84,7 @@ export default function Layout({ children }) {
                 title={isCollapsed ? n.label : undefined}
                 className={({ isActive }) =>
                   `flex items-center ${isCollapsed ? 'justify-center' : 'gap-3'} px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 group ${isActive
-                    ? theme === "dark" 
+                    ? theme === "dark"
                       ? 'bg-gradient-to-r from-indigo-500/15 to-purple-500/10 text-indigo-400 border border-indigo-500/20'
                       : 'bg-gradient-to-r from-indigo-100 to-purple-50 text-indigo-600 border border-indigo-300'
                     : theme === "dark"
@@ -133,7 +114,7 @@ export default function Layout({ children }) {
 
         {/* Health */}
         <div className="px-3 mb-2">
-          <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-2'} px-3 py-2 rounded-xl text-xs font-medium ${apiOk 
+          <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-2'} px-3 py-2 rounded-xl text-xs font-medium ${apiOk
             ? theme === "dark" ? 'bg-emerald-500/8 border border-emerald-500/20 text-emerald-400' : 'bg-emerald-100 border border-emerald-300 text-emerald-700'
             : theme === "dark" ? 'bg-rose-500/8 border border-rose-500/20 text-rose-400' : 'bg-rose-100 border border-rose-300 text-rose-700'
             }`} title={isCollapsed ? (apiOk ? 'API Connected' : 'API Unreachable') : undefined}>
@@ -143,7 +124,7 @@ export default function Layout({ children }) {
         </div>
 
         {/* Logout */}
-        <div className="px-3 mb-4">
+        {/* <div className="px-3 mb-4">
           <button
             onClick={handleLogout}
             title={isCollapsed ? "Logout" : undefined}
@@ -154,7 +135,7 @@ export default function Layout({ children }) {
             <LogOut size={16} className="flex-shrink-0" />
             {!isCollapsed && <span>Logout</span>}
           </button>
-        </div>
+        </div> */}
 
         {!isCollapsed && (
           <div className={`px-5 pb-4 text-[0.65rem] truncate ${theme === "dark" ? "text-slate-700" : "text-slate-500"}`}>

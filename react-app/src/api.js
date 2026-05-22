@@ -42,6 +42,23 @@ export const updateRoom = (id, payload) => request('PUT', `/rooms/${id}`, payloa
 export const deactivateRoom = (id) => request('DELETE', `/rooms/${id}`);
 export const getRoomAvailability = (id, date) => request('GET', `/rooms/${id}/availability`, null, { date });
 
+export const importRoomsFromCSV = async (file) => {
+  const formData = new FormData();
+  formData.append('file', file);
+  
+  const url = `${BASE}/rooms/import`;
+  const res = await fetch(url, {
+    method: 'POST',
+    body: formData,
+  });
+  
+  const data = await res.json().catch(() => null);
+  if (!res.ok) {
+    throw new APIError(res.status, data?.detail || res.statusText, data?.errors?.join('; '));
+  }
+  return data;
+};
+
 // Bookings
 export const getBookings = (params) => request('GET', '/bookings', null, params);
 export const createBooking = (payload) => request('POST', '/bookings', payload);

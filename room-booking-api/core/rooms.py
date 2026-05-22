@@ -1,4 +1,6 @@
 import uuid
+import csv
+import io
 from datetime import datetime
 
 try:
@@ -100,3 +102,113 @@ def deactivate_room(repo: RoomRepository, room_id: str) -> None:
     room.status = "inactive"
     room.updated_at = datetime.utcnow().isoformat()
     repo.update(room)
+
+
+def _parse_rooms_from_csv(csv_content: str) -> list[dict]:
+    """Parse rooms from CSV content. Returns list of room dicts."""
+    rooms = []
+
+    def clean(v):
+        return v.strip() if v and v.strip() != "" else None
+
+    def yes_no(v):
+        return True if v and v.strip().lower() == "yes" else False
+
+    try:
+        reader = csv.DictReader(io.StringIO(csv_content))
+        if not reader.fieldnames:
+            raise BookingError("Invalid CSV format: no headers found", http_status=400)
+
+        for row in reader:
+            try:
+                amenities_raw = clean(
+                    row.get("Amenities Available (Projector, Whiteboard, TV,")
+                )
+
+                if amenities_raw and amenities_raw.lower() != "no":
+                    amenities = [a.strip() for a in amenities_raw.split(",")]
+                else:
+                    amenities = []
+
+                capacity = clean(row.get("Seating Capacity"))
+                capacity = int(capacity) if capacity and capacity.isdigit() else 0
+
+                room = {
+                    "name": clean(row.get("Room Name")),
+                    "location": clean(row.get("Location / Building")) or "Default",
+                    "floor": int(clean(row.get("Floor")) or 1),
+                    "capacity": capacity,
+                    "amenities": amenities,
+                    "status": "active",
+                    "room_type": clean(row.get("Room Type")),
+                    "cabin_type": clean(row.get("Cabin Type")),
+                    "vc_enabled": yes_no(row.get("VC Enabled")),
+                    "power_points": yes_no(row.get("Power Points")),
+                }
+
+                rooms.append(room)
+
+            except Exception as e:
+                print(f"❌ Error parsing row: {e}")
+
+        return rooms
+
+    except Exception as e:
+        raise BookingError(f"Failed to parse CSV: {str(e)}", http_status=400)
+
+
+def import_rooms_from_csv(repo: RoomRepository, csv_content: str) -> dict:
+    """Import rooms from CSV content. Returns dict with created, failed, and error details."""
+    rooms_data = _parse_rooms_from_csv(csv_content)
+
+    results = {
+        "total": len(rooms_data),
+        "created": 0,
+        "failed": 0,
+        "skipped": 0,
+        "errors": [],
+        "created_rooms": [],
+        "failed_rooms": [],
+    }
+
+    for room_data in rooms_data:
+        try:
+            # Check if room already exists by name and location
+            existing = repo.list()
+            if any(
+                r.name == room_data["name"] and r.location == room_data["location"]
+                for r in existing
+            ):
+                results["skipped"] += 1
+                results["failed_rooms"].append(
+                    {"name": room_data["name"], "reason": "duplicate"}
+                )
+                continue
+
+            room = create_room(repo, room_data)
+            results["created"] += 1
+            results["created_rooms"].append(
+                {"name": room.name, "room_id": room.room_id, "location": room.location}
+            )
+
+        except BookingError as e:
+            results["failed"] += 1
+            results["failed_rooms"].append(
+                {"name": room_data.get("name", "Unknown"), "reason": e.message}
+            )
+            results["errors"].append(
+                f"Room '{room_data.get('name', 'Unknown')}': {e.message}"
+            )
+        except Exception as e:
+            results["failed"] += 1
+            results["failed_rooms"].append(
+                {
+                    "name": room_data.get("name", "Unknown"),
+                    "reason": "unexpected error",
+                }
+            )
+            results["errors"].append(
+                f"Room '{room_data.get('name', 'Unknown')}': {str(e)}"
+            )
+
+    return results

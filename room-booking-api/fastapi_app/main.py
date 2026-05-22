@@ -4,7 +4,7 @@ import dataclasses
 import logging
 from typing import Optional
 
-from fastapi import FastAPI, HTTPException, Query, Request
+from fastapi import FastAPI, HTTPException, Query, Request, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
@@ -106,6 +106,20 @@ def create_app(
     @app.post("/rooms", status_code=201)
     async def create_room_route(request: Request):
         return _to_dict(rooms_core.create_room(room_repo, await request.json()))
+
+    @app.post("/rooms/import", status_code=200)
+    async def import_rooms_route(file: UploadFile = File(...)):
+        """Import multiple rooms from a CSV file."""
+        if not file.filename.endswith('.csv'):
+            raise HTTPException(status_code=400, detail="File must be a CSV file")
+        
+        try:
+            contents = await file.read()
+            csv_content = contents.decode('utf-8', errors='ignore')
+            results = rooms_core.import_rooms_from_csv(room_repo, csv_content)
+            return results
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=f"Failed to process CSV: {str(e)}")
 
     @app.get("/rooms/{room_id}")
     async def get_room_route(room_id: str):
