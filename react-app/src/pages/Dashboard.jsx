@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../AuthContext';
 import { useTheme } from '../ThemeContext';
-import { getStats, getRooms, getBookings, getRoomAvailability, createBooking } from '../api';
+import { getStats, getRooms, getBookings, getRoomAvailability, createBooking, getAdminContacts } from '../api';
 import { StatCard, PageHeader, SectionHeader, EmptyState } from '../components/ui';
 import BookingCard from '../components/BookingCard';
 import { format } from 'date-fns';
@@ -39,6 +39,8 @@ export default function Dashboard() {
   const [ibBooking, setIbBooking] = useState(false);
   const [ibMsg, setIbMsg] = useState({ type: '', text: '' });
 
+  const [adminContacts, setAdminContacts] = useState([]);
+  const [adminContactsLoading, setAdminContactsLoading] = useState(false);
 
   const [ibStart, setIbStart] = useState(null);
   const [ibEnd, setIbEnd] = useState(null)
@@ -77,6 +79,14 @@ export default function Dashboard() {
       .catch(() => setIbSlots([]))
       .finally(() => setIbLoading(false));
   }, [ibRoom, ibDate]);
+
+  useEffect(() => {
+    setAdminContactsLoading(true);
+    getAdminContacts({ location })
+      .then(setAdminContacts)
+      .catch(() => setAdminContacts([]))
+      .finally(() => setAdminContactsLoading(false));
+  }, [location]);
 
   const handleInstantBook = async () => {
     // ✅ Guard: both start & end required
@@ -146,7 +156,7 @@ export default function Dashboard() {
     .sort((a, b) => a.start_time.localeCompare(b.start_time))
     .slice(0, 8);
 
-    const APEXON_VALUES = [
+  const APEXON_VALUES = [
     { icon: '🛡️', title: 'Integrity', desc: 'Establishing trust' },
     { icon: '🌟', title: 'Authenticity', desc: 'Being ourselves' },
     { icon: '🤝', title: 'Empathy', desc: 'Treating others well' },
@@ -178,13 +188,12 @@ export default function Dashboard() {
       </div>
 
       {/* Apexon Core Values Marquee */}
-      <div className={`relative flex overflow-hidden mb-6 rounded-2xl py-3.5 border shadow-sm ${
-        theme === 'dark' 
-          ? 'bg-gradient-to-r from-[#0f1420] via-[#161c2e] to-[#0f1420] border-[#1e2a45]' 
-          : 'bg-gradient-to-r from-indigo-50/50 via-white to-indigo-50/50 border-indigo-100'
-      }`}>
+      <div className={`relative flex overflow-hidden mb-6 rounded-2xl py-3.5 border shadow-sm ${theme === 'dark'
+        ? 'bg-gradient-to-r from-[#0f1420] via-[#161c2e] to-[#0f1420] border-[#1e2a45]'
+        : 'bg-gradient-to-r from-indigo-50/50 via-white to-indigo-50/50 border-indigo-100'
+        }`}>
         <div className="absolute inset-0 bg-gradient-to-r from-transparent via-indigo-500/5 to-transparent animate-pulse" />
-        
+
         <style>
           {`
             @keyframes ticker {
@@ -235,13 +244,12 @@ export default function Dashboard() {
       </div>
 
       {/* Company News Marquee */}
-      <div className={`relative flex overflow-hidden mb-6 rounded-xl py-2.5 border shadow-sm ${
-        theme === 'dark' 
-          ? 'bg-gradient-to-r from-[#161c2e] via-[#0f1420] to-[#161c2e] border-[#1e2a45]' 
-          : 'bg-gradient-to-r from-amber-50/50 via-white to-amber-50/50 border-amber-100'
-      }`}>
+      <div className={`relative flex overflow-hidden mb-6 rounded-xl py-2.5 border shadow-sm ${theme === 'dark'
+        ? 'bg-gradient-to-r from-[#161c2e] via-[#0f1420] to-[#161c2e] border-[#1e2a45]'
+        : 'bg-gradient-to-r from-amber-50/50 via-white to-amber-50/50 border-amber-100'
+        }`}>
         <div className="absolute inset-0 bg-gradient-to-r from-transparent via-amber-500/5 to-transparent animate-pulse" />
-        
+
         <div className="animate-ticker-news items-center cursor-default">
           {[...Array(2)].map((_, i) => (
             <div key={i} className="flex gap-8 items-center px-4">
@@ -272,6 +280,44 @@ export default function Dashboard() {
         }
       </div>
 
+      <div className="mb-6">
+        <SectionHeader title="📞 Location Admins" />
+        <div className="grid gap-4 md:grid-cols-2">
+          {adminContactsLoading ? (
+            <div className={`rounded-2xl border p-6 text-sm text-center ${theme === 'dark' ? 'border-[#1e2a45] bg-[#0b1224] text-slate-400' : 'border-gray-200 bg-white text-slate-600'}`}>
+              Loading admin contacts...
+            </div>
+          ) : adminContacts.length === 0 ? (
+            <div className={`rounded-2xl border p-6 text-sm ${theme === 'dark' ? 'border-[#1e2a45] bg-[#0b1224] text-slate-400' : 'border-gray-200 bg-white text-slate-600'}`}>
+              No admin contacts are configured for {location}. Please ask your operations team to add them.
+            </div>
+          ) : adminContacts.map(contact => (
+            <div key={contact.admin_id} className={`rounded-2xl border p-5 ${theme === 'dark' ? 'border-[#1e2a45] bg-[#0b1224]' : 'border-gray-200 bg-white'}`}>
+              <div className="flex items-start justify-between gap-3 mb-3">
+                <div>
+                  <div className={`text-base font-semibold ${theme === 'dark' ? 'text-slate-100' : 'text-slate-900'}`}>{contact.name}</div>
+                  <div className={`text-xs tracking-wide ${theme === 'dark' ? 'text-slate-500' : 'text-slate-500'}`}>{contact.role || 'Site Admin'}</div>
+                </div>
+              </div>
+              <div className="space-y-2 text-sm">
+                <div>
+                  <div className="text-[0.65rem] uppercase tracking-[0.24em] text-slate-500 mb-1">Location</div>
+                  <div className={theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}>{contact.location}</div>
+                </div>
+                <div>
+                  <div className="text-[0.65rem] uppercase tracking-[0.24em] text-slate-500 mb-1">Email</div>
+                  <a href={`mailto:${contact.email}`} className={`text-sm font-medium ${theme === 'dark' ? 'text-indigo-300' : 'text-indigo-600'}`}>{contact.email}</a>
+                </div>
+                <div>
+                  <div className="text-[0.65rem] uppercase tracking-[0.24em] text-slate-500 mb-1">Phone</div>
+                  <a href={`tel:${contact.phone}`} className={`text-sm font-medium ${theme === 'dark' ? 'text-indigo-300' : 'text-indigo-600'}`}>{contact.phone}</a>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
       <div className="grid grid-cols-5 gap-6">
         {/* LEFT */}
         <div className="col-span-3">
@@ -292,7 +338,7 @@ export default function Dashboard() {
                   className={`w-full px-4 py-2.5 rounded-xl ${theme === 'dark'
                     ? 'bg-[#0a0f1e] border-[#1e2a45] text-slate-100'
                     : 'bg-white border-gray-300 text-slate-900'
-                  } border text-sm`}
+                    } border text-sm`}
                 >
                   {activeRooms.map(r => (
                     <option key={r.room_id} value={r.room_id}>{r.name}</option>
@@ -313,7 +359,7 @@ export default function Dashboard() {
                   className={`w-full px-4 py-2.5 rounded-xl ${theme === 'dark'
                     ? 'bg-[#0a0f1e] border-[#1e2a45] text-slate-100'
                     : 'bg-white border-gray-300 text-slate-900'
-                  } border text-sm`}
+                    } border text-sm`}
                 />
               </div>
             </div>
@@ -356,7 +402,7 @@ export default function Dashboard() {
                     <div className={`flex items-center gap-3 px-4 py-3 rounded-xl ${theme === 'dark'
                       ? 'bg-[#070c1a] border-[#1e2a45]'
                       : 'bg-white border-gray-300'
-                    } border mb-3`}>
+                      } border mb-3`}>
                       <span className={theme === 'dark' ? 'text-slate-500' : 'text-slate-600'}>🕒</span>
                       <input
                         type="time"
@@ -380,7 +426,7 @@ export default function Dashboard() {
                     <div className={`flex items-center gap-3 px-4 py-3 rounded-xl ${theme === 'dark'
                       ? 'bg-[#070c1a] border-[#1e2a45]'
                       : 'bg-white border-gray-300'
-                    } border mb-3`}>
+                      } border mb-3`}>
                       <span className={theme === 'dark' ? 'text-slate-500' : 'text-slate-600'}>🕒</span>
                       <input
                         type="time"
@@ -405,7 +451,7 @@ export default function Dashboard() {
                 <div className={`px-4 py-2.5 rounded-xl ${theme === 'dark'
                   ? 'bg-emerald-500/8 border-emerald-500/20'
                   : 'bg-emerald-100 border-emerald-300'
-                } border mb-3`}>
+                  } border mb-3`}>
                   <span className={`text-sm font-semibold ${theme === 'dark' ? 'text-emerald-400' : 'text-emerald-700'}`}>
                     📅 {roomMap[ibRoom]} · {ibDate} · {ibStart.slice(11, 16)} – {ibEnd.slice(11, 16)}
                   </span>
@@ -420,7 +466,7 @@ export default function Dashboard() {
                     className={`flex-1 px-4 py-2.5 rounded-xl ${theme === 'dark'
                       ? 'bg-[#0a0f1e] border-[#1e2a45] text-slate-100'
                       : 'bg-white border-gray-300 text-slate-900'
-                    } border text-sm`}
+                      } border text-sm`}
                   />
 
                   <button
@@ -439,7 +485,7 @@ export default function Dashboard() {
                     className={`px-3 py-2.5 rounded-xl border text-sm ${theme === 'dark'
                       ? 'border-[#1e2a45] text-slate-400'
                       : 'border-gray-300 text-slate-600'
-                    }`}
+                      }`}
                   >
                     ✖
                   </button>

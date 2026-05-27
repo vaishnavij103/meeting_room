@@ -96,6 +96,35 @@ PUT /bookings/{booking_id}
 DELETE /bookings/{booking_id}
 ```
 
+## Notifications
+
+### List Notifications
+```bash
+GET /notifications?user_id={uuid}&read=true
+GET /notifications?user_id={uuid}&read=false
+GET /notifications?user_id={uuid}
+```
+
+### Mark Notification Read
+```bash
+PUT /notifications/{notification_id}/read
+```
+
+### Mark Notification Unread
+```bash
+PUT /notifications/{notification_id}/unread
+```
+
+### Mark All Notifications Read
+```bash
+PUT /notifications/read-all?user_id={uuid}
+```
+
+### Mark All Notifications Unread
+```bash
+PUT /notifications/unread-all?user_id={uuid}
+```
+
 ## Users
 
 ### List Users

@@ -4,7 +4,7 @@ import { useTheme } from '../ThemeContext';
 import { healthCheck } from '../api';
 import { useState, useEffect } from 'react';
 import {
-  LayoutDashboard, CalendarDays, Building2, Users, LogOut, ChevronLeft, ChevronRight
+  LayoutDashboard, CalendarDays, Building2, Users, Bell, LogOut, ChevronLeft, ChevronRight
 } from 'lucide-react';
 import { Navbar } from "./Navbar";
 import logo from "../assets/Apexon_id6ht3QYLO_0.png";
@@ -12,6 +12,7 @@ import logo from "../assets/Apexon_id6ht3QYLO_0.png";
 const NAV = [
   { to: '/', icon: LayoutDashboard, label: 'Dashboard', sub: 'Overview & stats', adminOnly: false },
   { to: '/bookings', icon: CalendarDays, label: 'Bookings', sub: 'Book rooms', adminOnly: false },
+  { to: '/notifications', icon: Bell, label: 'Notifications', sub: 'Alerts & updates', adminOnly: false },
   { to: '/rooms', icon: Building2, label: 'Rooms', sub: 'Manage spaces', adminOnly: true },
   { to: '/users', icon: Users, label: 'Users', sub: 'Team members', adminOnly: true },
 ];

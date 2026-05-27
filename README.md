@@ -45,6 +45,6 @@ UI runs at http://localhost:8501
 
 ## Architecture
 
-- **Backend**: FastAPI + SQLite (room-booking-api/)
+- **Backend**: FastAPI + SQLite / PostgreSQL (room-booking-api/)
 - **Frontend**: Streamlit with custom dark theme (streamlit_app/)
 - **Business hours**: 08:00–20:00 (configurable via env vars)

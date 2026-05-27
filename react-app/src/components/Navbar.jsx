@@ -1,18 +1,19 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../AuthContext';
 import {
     Button,
-    TextField,
     Select,
     MenuItem,
     FormControl,
     Menu,
     Badge
 } from "@mui/material";
-import { MapPin, Search, Bell, Moon, Sun, User, LogOut, Settings } from "lucide-react";
+import { MapPin, Bell, Moon, Sun, User, LogOut, Settings } from "lucide-react";
 
 import { useLocation } from "../LocationContext";
 import { useTheme } from "../ThemeContext";
+import { getNotifications } from '../api';
 
 const locations = [
     "Pune",
@@ -20,22 +21,37 @@ const locations = [
     "Ahmedabad",
     "Coimbatore",
     "Hyderabad",
-    "Bangalore Domlur office",
-    "Bangalore Signet",
+    "Bangalore ( Domlur )",
+    "Bangalore ( Signet )",
     "Chennai",
 ];
 
 
 
 export function Navbar() {
+    const navigate = useNavigate();
     const { location, setLocation } = useLocation();
     const { theme, toggleTheme } = useTheme();
     const [notifAnchor, setNotifAnchor] = useState(null);
+    const [notifications, setNotifications] = useState([]);
+    const [unreadCount, setUnreadCount] = useState(0);
     const { user, isAdmin, logout } = useAuth();
     const initials = user?.name?.split(' ').map(p => p[0]).join('').toUpperCase().slice(0, 2) || '?';
     const [profileAnchor, setProfileAnchor] = useState(null);
 
     const handleLogout = () => { logout(); navigate('/login'); };
+
+    useEffect(() => {
+        if (!user?.user_id) return;
+        getNotifications({ user_id: user.user_id, read: false })
+            .then((items) => {
+                setNotifications(items.slice(0, 4));
+                setUnreadCount(items.length);
+            })
+            .catch(() => {
+                setUnreadCount(0);
+            });
+    }, [user]);
 
     return (
 
@@ -94,7 +110,7 @@ export function Navbar() {
                     onClick={(e) => setNotifAnchor(e.currentTarget)}
                     sx={{ minWidth: 0, color: theme === "dark" ? "white" : "black" }}
                 >
-                    <Badge color="error" variant="dot" invisible={Boolean(notifAnchor)}>
+                    <Badge color="error" badgeContent={unreadCount || null} showZero={false}>
                         <Bell size={18} />
                     </Badge>
                 </Button>
@@ -122,14 +138,33 @@ export function Navbar() {
                     <div className={`px-4 py-3 border-b text-sm font-bold ${theme === 'dark' ? 'border-[#1e2a45]' : 'border-gray-100'}`}>
                         Notifications
                     </div>
-                    <MenuItem onClick={() => setNotifAnchor(null)} sx={{ fontSize: '0.8rem', py: 1.5 }}>
-                        <span className="mr-2">👋</span> Welcome to Apexon RoomBook!
-                    </MenuItem>
-                    <MenuItem onClick={() => setNotifAnchor(null)} sx={{ fontSize: '0.8rem', py: 1.5 }}>
-                        <span className="mr-2">✅</span> Your booking was confirmed.
-                    </MenuItem>
-                    <MenuItem onClick={() => setNotifAnchor(null)} sx={{ fontSize: '0.8rem', py: 1.5 }}>
-                        <span className="mr-2">🚀</span> Explore the new Dashboard features.
+                    {notifications.length === 0 ? (
+                        <MenuItem onClick={() => setNotifAnchor(null)} sx={{ fontSize: '0.8rem', py: 1.5 }}>
+                            <span className="mr-2">🔕</span> No new notifications.
+                        </MenuItem>
+                    ) : notifications.map((notification) => (
+                        <MenuItem
+                            key={notification.notification_id}
+                            onClick={() => {
+                                setNotifAnchor(null);
+                                navigate('/notifications');
+                            }}
+                            sx={{ fontSize: '0.8rem', py: 1.5, alignItems: 'flex-start' }}
+                        >
+                            <div className="font-semibold truncate" style={{ maxWidth: 220 }}>{notification.title}</div>
+                            <div className="text-[0.75rem] text-slate-500 truncate" style={{ maxWidth: 220 }}>
+                                {notification.message}
+                            </div>
+                        </MenuItem>
+                    ))}
+                    <MenuItem
+                        onClick={() => {
+                            setNotifAnchor(null);
+                            navigate('/notifications');
+                        }}
+                        sx={{ fontSize: '0.8rem', py: 1.5, justifyContent: 'center' }}
+                    >
+                        View all notifications
                     </MenuItem>
                 </Menu>
                 {/* User info */}

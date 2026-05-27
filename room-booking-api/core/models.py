@@ -37,6 +37,19 @@ class LocationWiseRoom:
 
 
 @dataclass
+class AdminContact:
+    admin_id: str
+    location: str
+    name: str
+    email: str
+    phone: str
+    role: str = 'Site Admin'
+    active: bool = True
+    created_at: str = ''
+    updated_at: str = ''
+
+
+@dataclass
 class Booking:
     booking_id: str
     room_id: str
@@ -62,6 +75,24 @@ class User:
     role: str  # "admin" or "employee"
     password_hash: str
     created_at: str
+
+
+@dataclass
+class Notification:
+    notification_id: str
+    recipient_id: str
+    sender_id: Optional[str]
+    type: str
+    title: str
+    message: str
+    metadata: dict
+    related_booking_id: Optional[str]
+    created_at: str
+    read_at: Optional[str] = None
+
+    @property
+    def is_read(self) -> bool:
+        return self.read_at is not None
 
 
 @dataclass

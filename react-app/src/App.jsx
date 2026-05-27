@@ -7,6 +7,7 @@ import Layout from './components/Layout';
 import LoginPage from './pages/LoginPage';
 import Dashboard from './pages/Dashboard';
 import BookingsPage from './pages/BookingsPage';
+import NotificationsPage from './pages/NotificationsPage';
 import RoomsPage from './pages/RoomsPage';
 import UsersPage from './pages/UsersPage';
 
@@ -18,6 +19,7 @@ function ProtectedRoutes() {
       <Routes>
         <Route path="/" element={<Dashboard />} />
         <Route path="/bookings" element={<BookingsPage />} />
+        <Route path="/notifications" element={<NotificationsPage />} />
         {isAdmin && <Route path="/rooms" element={<RoomsPage />} />}
         {isAdmin && <Route path="/users" element={<UsersPage />} />}
         <Route path="*" element={<Navigate to="/" replace />} />

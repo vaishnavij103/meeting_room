@@ -13,17 +13,27 @@ try:
     from ..core import rooms as rooms_core
     from ..core import bookings as bookings_core
     from ..core import users as users_core
-    from ..db.sqlite_adapter import SQLiteRoomRepo, SQLiteBookingRepo, SQLiteUserRepo
-    from ..db.base import RoomRepository, BookingRepository, UserRepository
-    from ..shared.config import get_db_path
+    from ..core import admin_contacts as admin_contacts_core
+    from ..core import notifications as notifications_core
+    from ..db.sqlite_adapter import SQLiteRoomRepo, SQLiteBookingRepo, SQLiteUserRepo, SQLiteAdminContactRepo
+    from ..db.notifications_sqlite_adapter import SQLiteNotificationRepo
+    from ..db.postgres_adapter import PostgresRoomRepo, PostgresBookingRepo, PostgresUserRepo, PostgresAdminContactRepo
+    from ..db.notifications_postgres_adapter import PostgresNotificationRepo
+    from ..db.base import RoomRepository, BookingRepository, UserRepository, AdminContactRepository, NotificationRepository
+    from ..shared.config import get_database_url, get_db_path, get_notifications_database_url, get_notifications_db_path
 except ImportError:
     from core.models import BookingError  # type: ignore
     from core import rooms as rooms_core  # type: ignore
     from core import bookings as bookings_core  # type: ignore
     from core import users as users_core  # type: ignore
-    from db.sqlite_adapter import SQLiteRoomRepo, SQLiteBookingRepo, SQLiteUserRepo  # type: ignore
-    from db.base import RoomRepository, BookingRepository, UserRepository  # type: ignore
-    from shared.config import get_db_path  # type: ignore
+    from core import admin_contacts as admin_contacts_core  # type: ignore
+    from core import notifications as notifications_core  # type: ignore
+    from db.sqlite_adapter import SQLiteRoomRepo, SQLiteBookingRepo, SQLiteUserRepo, SQLiteAdminContactRepo  # type: ignore
+    from db.notifications_sqlite_adapter import SQLiteNotificationRepo  # type: ignore
+    from db.postgres_adapter import PostgresRoomRepo, PostgresBookingRepo, PostgresUserRepo, PostgresAdminContactRepo  # type: ignore
+    from db.notifications_postgres_adapter import PostgresNotificationRepo  # type: ignore
+    from db.base import RoomRepository, BookingRepository, UserRepository, AdminContactRepository, NotificationRepository  # type: ignore
+    from shared.config import get_database_url, get_db_path, get_notifications_database_url, get_notifications_db_path  # type: ignore
 
 logger = logging.getLogger("room_booking")
 
@@ -43,6 +53,8 @@ def create_app(
     room_repo: RoomRepository,
     booking_repo: BookingRepository,
     user_repo: UserRepository,
+    admin_repo: AdminContactRepository,
+    notification_repo: NotificationRepository,
 ) -> FastAPI:
     app = FastAPI(title="Apexon Room Booking API", version="3.0.0")
 
@@ -166,7 +178,9 @@ def create_app(
 
     @app.post("/bookings", status_code=201)
     async def create_booking_route(request: Request):
-        return _to_dict(bookings_core.create_booking(booking_repo, room_repo, user_repo, await request.json()))
+        booking = bookings_core.create_booking(booking_repo, room_repo, user_repo, await request.json())
+        notifications_core.notify_booking_event(notification_repo, user_repo, booking, "created")
+        return _to_dict(booking)
 
     @app.get("/bookings/{booking_id}")
     async def get_booking_route(booking_id: str):
@@ -174,16 +188,36 @@ def create_app(
 
     @app.put("/bookings/{booking_id}")
     async def update_booking_route(booking_id: str, request: Request):
-        return _to_dict(bookings_core.update_booking(booking_repo, room_repo, user_repo, booking_id, await request.json()))
+        booking = bookings_core.update_booking(booking_repo, room_repo, user_repo, booking_id, await request.json())
+        notifications_core.notify_booking_event(notification_repo, user_repo, booking, "updated")
+        return _to_dict(booking)
 
     @app.delete("/bookings/{booking_id}")
     async def cancel_booking_route(booking_id: str):
-        return _to_dict(bookings_core.cancel_booking(booking_repo, booking_id))
+        booking = bookings_core.cancel_booking(booking_repo, booking_id)
+        notifications_core.notify_booking_event(notification_repo, user_repo, booking, "cancelled")
+        return _to_dict(booking)
 
     # ── Users ─────────────────────────────────────────────────────────────
     @app.get("/users")
     async def list_users_route():
         return [_user_safe(u) for u in users_core.list_users(user_repo)]
+
+    @app.get("/admin-contacts")
+    async def list_admin_contacts_route(location: Optional[str] = Query(None)):
+        return [_to_dict(a) for a in admin_contacts_core.list_admin_contacts(admin_repo, location)]
+
+    @app.post("/admin-contacts", status_code=201)
+    async def create_admin_contact_route(request: Request):
+        return _to_dict(admin_contacts_core.create_admin_contact(admin_repo, await request.json()))
+
+    @app.put("/admin-contacts/{admin_id}")
+    async def update_admin_contact_route(admin_id: str, request: Request):
+        return _to_dict(admin_contacts_core.update_admin_contact(admin_repo, admin_id, await request.json()))
+
+    @app.delete("/admin-contacts/{admin_id}", status_code=204)
+    async def delete_admin_contact_route(admin_id: str):
+        admin_contacts_core.delete_admin_contact(admin_repo, admin_id)
 
     @app.post("/users", status_code=201)
     async def create_user_route(request: Request):
@@ -206,6 +240,7 @@ def create_app(
             return JSONResponse(status_code=409, content={"error": "Already checked in"})
         booking.actual_check_in = datetime.datetime.utcnow().isoformat()
         bookings_core.save_booking(booking_repo, booking)
+        notifications_core.notify_booking_event(notification_repo, user_repo, booking, "checked-in")
         return _to_dict(booking)
 
     @app.post("/bookings/{booking_id}/checkout")
@@ -220,17 +255,56 @@ def create_app(
         if booking.actual_check_out < booking.end_time:
             booking.end_time = booking.actual_check_out
         bookings_core.save_booking(booking_repo, booking)
+        notifications_core.notify_booking_event(notification_repo, user_repo, booking, "checked-out")
         return _to_dict(booking)
+
+    # ── Notifications ─────────────────────────────────────────────────────
+    @app.get("/notifications")
+    async def list_notifications_route(user_id: Optional[str] = Query(None), read: Optional[bool] = Query(None)):
+        return [_to_dict(n) for n in notifications_core.list_notifications(notification_repo, user_id=user_id, read=read)]
+
+    @app.put("/notifications/{notification_id}/read")
+    async def mark_notification_read_route(notification_id: str):
+        return _to_dict(notifications_core.mark_notification_read(notification_repo, notification_id))
+
+    @app.put("/notifications/{notification_id}/unread")
+    async def mark_notification_unread_route(notification_id: str):
+        return _to_dict(notifications_core.mark_notification_unread(notification_repo, notification_id))
+
+    @app.put("/notifications/read-all")
+    async def mark_all_notifications_read_route(user_id: str = Query(...)):
+        count = notifications_core.mark_all_notifications_read(notification_repo, user_id)
+        return {"updated": count}
+
+    @app.put("/notifications/unread-all")
+    async def mark_all_notifications_unread_route(user_id: str = Query(...)):
+        count = notifications_core.mark_all_notifications_unread(notification_repo, user_id)
+        return {"updated": count}
 
     return app
 
 
 def _make_default_app() -> FastAPI:
+    db_url = get_database_url()
+    notifications_db_url = get_notifications_database_url() or db_url
+
+    if db_url:
+        return create_app(
+            room_repo=PostgresRoomRepo(db_url),
+            booking_repo=PostgresBookingRepo(db_url),
+            user_repo=PostgresUserRepo(db_url),
+            admin_repo=PostgresAdminContactRepo(db_url),
+            notification_repo=PostgresNotificationRepo(notifications_db_url or db_url),
+        )
+
     db_path = get_db_path()
+    notifications_db_path = get_notifications_db_path()
     return create_app(
         room_repo=SQLiteRoomRepo(db_path),
         booking_repo=SQLiteBookingRepo(db_path),
         user_repo=SQLiteUserRepo(db_path),
+        admin_repo=SQLiteAdminContactRepo(db_path),
+        notification_repo=SQLiteNotificationRepo(notifications_db_path),
     )
 
 

@@ -280,6 +280,55 @@ DELETE /bookings/{booking_id}
 
 ---
 
+## Notifications
+
+### List Notifications
+```http
+GET /notifications?user_id={string}&read={boolean}
+```
+
+**Query Parameters**:
+- `user_id` - Filter notifications for the recipient user
+- `read` - Optional filter by read status (`true` or `false`)
+
+**Response**: `200 OK` with array of notification objects.
+
+### Mark Notification Read
+```http
+PUT /notifications/{notification_id}/read
+```
+
+**Response**: `200 OK` with updated notification object.
+
+### Mark Notification Unread
+```http
+PUT /notifications/{notification_id}/unread
+```
+
+**Response**: `200 OK` with updated notification object.
+
+### Mark All Notifications Read
+```http
+PUT /notifications/read-all?user_id={string}
+```
+
+**Response**: `200 OK` with JSON payload:
+```json
+{"updated": 5}
+```
+
+### Mark All Notifications Unread
+```http
+PUT /notifications/unread-all?user_id={string}
+```
+
+**Response**: `200 OK` with JSON payload:
+```json
+{"updated": 5}
+```
+
+---
+
 ## Users
 
 ### List Users

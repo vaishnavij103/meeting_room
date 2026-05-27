@@ -4,9 +4,9 @@ from abc import ABC, abstractmethod
 from typing import Optional
 
 try:
-    from ..core.models import Room, Booking, User , LocationWiseRoom
+    from ..core.models import Room, Booking, User, LocationWiseRoom, AdminContact, Notification
 except ImportError:
-    from core.models import Room, Booking, User, LocationWiseRoom  # type: ignore
+    from core.models import Room, Booking, User, LocationWiseRoom, AdminContact, Notification  # type: ignore
 
 
 class RoomRepository(ABC):
@@ -63,3 +63,43 @@ class UserRepository(ABC):
 
     @abstractmethod
     def update(self, user: User) -> User: ...
+
+
+class AdminContactRepository(ABC):
+    @abstractmethod
+    def get(self, admin_id: str) -> Optional[AdminContact]: ...
+
+    @abstractmethod
+    def list(self, location: str = None) -> list[AdminContact]: ...
+
+    @abstractmethod
+    def create(self, admin_contact: AdminContact) -> AdminContact: ...
+
+    @abstractmethod
+    def update(self, admin_contact: AdminContact) -> AdminContact: ...
+
+    @abstractmethod
+    def delete(self, admin_id: str) -> None: ...
+
+
+class NotificationRepository(ABC):
+    @abstractmethod
+    def get(self, notification_id: str) -> Optional[Notification]: ...
+
+    @abstractmethod
+    def list(self, recipient_id: str = None, read: bool = None) -> list[Notification]: ...
+
+    @abstractmethod
+    def create(self, notification: Notification) -> Notification: ...
+
+    @abstractmethod
+    def mark_read(self, notification_id: str, read_at: str) -> Notification: ...
+
+    @abstractmethod
+    def mark_unread(self, notification_id: str) -> Notification: ...
+
+    @abstractmethod
+    def mark_all_read(self, recipient_id: str, read_at: str) -> int: ...
+
+    @abstractmethod
+    def mark_all_unread(self, recipient_id: str) -> int: ...

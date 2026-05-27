@@ -41,17 +41,18 @@ export const createRoom = (payload) => request('POST', '/rooms', payload);
 export const updateRoom = (id, payload) => request('PUT', `/rooms/${id}`, payload);
 export const deactivateRoom = (id) => request('DELETE', `/rooms/${id}`);
 export const getRoomAvailability = (id, date) => request('GET', `/rooms/${id}/availability`, null, { date });
+export const getAdminContacts = (params) => request('GET', '/admin-contacts', null, params);
 
 export const importRoomsFromCSV = async (file) => {
   const formData = new FormData();
   formData.append('file', file);
-  
+
   const url = `${BASE}/rooms/import`;
   const res = await fetch(url, {
     method: 'POST',
     body: formData,
   });
-  
+
   const data = await res.json().catch(() => null);
   if (!res.ok) {
     throw new APIError(res.status, data?.detail || res.statusText, data?.errors?.join('; '));
@@ -73,5 +74,12 @@ export const getUserBookings = (id) => request('GET', `/users/${id}/bookings`);
 // Check-in/Check-out
 export const checkInBooking = (id) => request('POST', `/bookings/${id}/checkin`);
 export const checkOutBooking = (id) => request('POST', `/bookings/${id}/checkout`);
+
+// Notifications
+export const getNotifications = (params) => request('GET', '/notifications', null, params);
+export const markNotificationRead = (id) => request('PUT', `/notifications/${id}/read`, {});
+export const markNotificationUnread = (id) => request('PUT', `/notifications/${id}/unread`, {});
+export const markAllNotificationsRead = (user_id) => request('PUT', '/notifications/read-all', {}, { user_id });
+export const markAllNotificationsUnread = (user_id) => request('PUT', '/notifications/unread-all', {}, { user_id });
 
 export { APIError };

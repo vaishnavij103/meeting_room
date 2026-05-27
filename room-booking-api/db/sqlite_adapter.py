@@ -5,11 +5,11 @@ import sqlite3
 from typing import Optional
 
 try:
-    from ..core.models import Room, Booking, User , LocationWiseRoom
-    from .base import RoomRepository, BookingRepository, UserRepository
+    from ..core.models import Room, Booking, User, LocationWiseRoom, AdminContact
+    from .base import RoomRepository, BookingRepository, UserRepository, AdminContactRepository
 except ImportError:
-    from core.models import Room, Booking, User ,LocationWiseRoom # type: ignore
-    from db.base import RoomRepository, BookingRepository, UserRepository  # type: ignore
+    from core.models import Room, Booking, User, LocationWiseRoom, AdminContact  # type: ignore
+    from db.base import RoomRepository, BookingRepository, UserRepository, AdminContactRepository  # type: ignore
 
 _DDL = """
 CREATE TABLE IF NOT EXISTS rooms (
@@ -52,6 +52,19 @@ CREATE TABLE IF NOT EXISTS users (
 );
 
 
+CREATE TABLE IF NOT EXISTS admin_contacts (
+    admin_id    TEXT PRIMARY KEY,
+    location    TEXT NOT NULL,
+    name        TEXT NOT NULL,
+    email       TEXT NOT NULL,
+    phone       TEXT NOT NULL,
+    role        TEXT NOT NULL DEFAULT 'Site Admin',
+    active      INTEGER NOT NULL DEFAULT 1 CHECK (active IN (0,1)),
+    created_at  TEXT NOT NULL,
+    updated_at  TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_admin_contacts_location ON admin_contacts(location);
 
 CREATE TABLE if not exists bookings (
     booking_id TEXT PRIMARY KEY,
@@ -134,6 +147,20 @@ def _row_to_user(row: sqlite3.Row) -> User:
         role=row["role"] if "role" in row.keys() else "employee",
         password_hash=row["password_hash"] if "password_hash" in row.keys() else "",
         created_at=row["created_at"],
+    )
+
+
+def _row_to_admin_contact(row: sqlite3.Row) -> AdminContact:
+    return AdminContact(
+        admin_id=row["admin_id"],
+        location=row["location"],
+        name=row["name"],
+        email=row["email"],
+        phone=row["phone"],
+        role=row["role"],
+        active=bool(row["active"]),
+        created_at=row["created_at"],
+        updated_at=row["updated_at"],
     )
 
 
@@ -345,3 +372,49 @@ class SQLiteUserRepo(UserRepository):
                 (user.name, user.email, user.department, user.role, user.password_hash, user.user_id),
             )
         return user
+
+
+class SQLiteAdminContactRepo(AdminContactRepository):
+    def __init__(self, db_path: str):
+        self._db_path = db_path
+        self._init_schema()
+
+    def _init_schema(self) -> None:
+        with _connect(self._db_path) as conn:
+            conn.executescript(_DDL)
+
+    def get(self, admin_id: str) -> Optional[AdminContact]:
+        with _connect(self._db_path) as conn:
+            row = conn.execute("SELECT * FROM admin_contacts WHERE admin_id=?", (admin_id,)).fetchone()
+        return _row_to_admin_contact(row) if row else None
+
+    def list(self, location: str = None) -> list[AdminContact]:
+        query = "SELECT * FROM admin_contacts WHERE active=1"
+        params: list = []
+        if location is not None:
+            query += " AND location = ?"
+            params.append(location)
+        query += " ORDER BY name"
+        with _connect(self._db_path) as conn:
+            rows = conn.execute(query, params).fetchall()
+        return [_row_to_admin_contact(r) for r in rows]
+
+    def create(self, admin_contact: AdminContact) -> AdminContact:
+        with _connect(self._db_path) as conn:
+            conn.execute(
+                "INSERT INTO admin_contacts (admin_id,location,name,email,phone,role,active,created_at,updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (admin_contact.admin_id, admin_contact.location, admin_contact.name, admin_contact.email, admin_contact.phone, admin_contact.role, int(admin_contact.active), admin_contact.created_at, admin_contact.updated_at),
+            )
+        return admin_contact
+
+    def update(self, admin_contact: AdminContact) -> AdminContact:
+        with _connect(self._db_path) as conn:
+            conn.execute(
+                "UPDATE admin_contacts SET location=?,name=?,email=?,phone=?,role=?,active=?,updated_at=? WHERE admin_id=?",
+                (admin_contact.location, admin_contact.name, admin_contact.email, admin_contact.phone, admin_contact.role, int(admin_contact.active), admin_contact.updated_at, admin_contact.admin_id),
+            )
+        return admin_contact
+
+    def delete(self, admin_id: str) -> None:
+        with _connect(self._db_path) as conn:
+            conn.execute("UPDATE admin_contacts SET active=0 WHERE admin_id=?", (admin_id,))

@@ -1,10 +1,11 @@
 """Seed script — creates all rooms via the Room Booking API."""
+import os
 import requests
 import csv
 import json
 
 
-BASE_URL = "https://meeting-room-6ssp.onrender.com/api"
+BASE_URL = os.environ.get("API_BASE_URL", "http://localhost:8000/api")
 
 # Rules:
 # - No floor field (all same floor)

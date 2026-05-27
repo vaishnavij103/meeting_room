@@ -22,12 +22,21 @@ from fastapi_app.main import app as api_app
 def _seed_if_needed():
     """Auto-seed rooms and admin on first run (empty DB)."""
     try:
-        from db.sqlite_adapter import SQLiteRoomRepo, SQLiteBookingRepo, SQLiteUserRepo
-        from shared.config import get_db_path
-        db = get_db_path()
-        room_repo = SQLiteRoomRepo(db)
-        SQLiteBookingRepo(db)
-        user_repo = SQLiteUserRepo(db)
+        from shared.config import get_database_url, get_db_path
+        db_url = get_database_url()
+        if db_url:
+            from db.postgres_adapter import PostgresRoomRepo, PostgresBookingRepo, PostgresUserRepo, PostgresAdminContactRepo
+            room_repo = PostgresRoomRepo(db_url)
+            PostgresBookingRepo(db_url)
+            user_repo = PostgresUserRepo(db_url)
+            PostgresAdminContactRepo(db_url)
+        else:
+            from db.sqlite_adapter import SQLiteRoomRepo, SQLiteBookingRepo, SQLiteUserRepo, SQLiteAdminContactRepo
+            db = get_db_path()
+            room_repo = SQLiteRoomRepo(db)
+            SQLiteBookingRepo(db)
+            user_repo = SQLiteUserRepo(db)
+            SQLiteAdminContactRepo(db)
 
         if len(room_repo.list()) == 0:
             logging.info("🏢 First run — seeding rooms and admin...")
