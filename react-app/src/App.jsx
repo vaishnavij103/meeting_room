@@ -32,12 +32,11 @@ export default function App() {
   const { theme } = useTheme(); // ✅ get theme
 
   return (
-    <div
-      className={`min-h-screen ${theme === "dark"
-        ? "bg-[#0a0f1e] text-white"
+    <div className={`min-h-screen relative ${theme === "dark"
+        ? "bg-[#020617] text-white"
         : "bg-white text-black"
-        }`}
-    >
+      }`}>
+      <div className="a-shape"></div>
       <AuthProvider>
         <Routes>
           <Route path="/login" element={<LoginPage />} />

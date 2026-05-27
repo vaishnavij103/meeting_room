@@ -85,3 +85,62 @@
 .animate-blink {
   animation: blink 2s infinite;
 }
+
+/* DARK BACKGROUND */
+.dark {
+  background: linear-gradient(90deg, #0b1f3a, #1e3a5f);
+  min-height: 100vh;
+}
+
+/* A SHAPE */
+.a-shape {
+  position: fixed;
+  right: -80px;
+  top: 55%;
+  transform: translateY(-50%);
+
+  width: 500px;
+  height: 650px;
+
+  opacity: 0.2;
+  z-index: 0;
+
+  /* 🔥 NEW TECH BACKGROUND */
+  background: radial-gradient(circle at 60% 40%, #3b82f6, transparent 60%),
+    radial-gradient(circle at 40% 70%, #a855f7, transparent 60%),
+    linear-gradient(135deg, #020617, #0b1f3a);
+
+  clip-path: polygon(50% 0%,
+      100% 100%,
+      75% 100%,
+      60% 70%,
+      40% 70%,
+      25% 100%,
+      0% 100%);
+
+  filter: blur(0.3px);
+}
+
+.a-shape::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+
+  background-size: 30px 30px;
+
+  opacity: 0.4;
+}
+
+/* overlay */
+.a-shape::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+
+  background: radial-gradient(circle at 50% 50%, rgba(59, 130, 246, 0.3), transparent 70%);
+  mix-blend-mode: screen;
+}
