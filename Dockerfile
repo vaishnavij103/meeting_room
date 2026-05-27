@@ -29,6 +29,7 @@ COPY room-booking-api/ ./room-booking-api/
 COPY run_api.py ./
 COPY seed_admin.py ./
 COPY seed_rooms.py ./
+COPY location_wise_rooms_cleaned.csv ./   
 
 # Copy built React frontend
 COPY --from=frontend-build /app/dist /usr/share/nginx/html
