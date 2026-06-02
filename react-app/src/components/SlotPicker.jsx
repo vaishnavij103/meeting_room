@@ -25,6 +25,7 @@ export default function SlotPicker({ room, onBooked, onClose }) {
   const [loading, setLoading] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState(null);
   const [title, setTitle] = useState('');
+  const [costCentre, setCostCentre] = useState('');
   const [booking, setBooking] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -58,6 +59,9 @@ export default function SlotPicker({ room, onBooked, onClose }) {
       .finally(() => setLoading(false));
   }, [room.room_id, date]);
 
+  const isAdmin = user?.role === 'admin';
+  const canBook = (room.allowed_users?.length || 0) === 0 || isAdmin || (user && (room.allowed_users || []).includes(user.user_id));
+
   const handleConfirm = async () => {
     if (!selectedSlot && (!ibStart || !ibEnd)) return;
     const st = ibStart || selectedSlot?.start_time;
@@ -72,6 +76,7 @@ export default function SlotPicker({ room, onBooked, onClose }) {
         start_time: st,
         end_time: et,
         notes: '',
+        cost_centre: costCentre.trim(),
       });
       setSuccess(`Booked! ${room.name} at ${st.slice(11, 16)}`);
       setSelectedSlot(null);
@@ -98,7 +103,7 @@ export default function SlotPicker({ room, onBooked, onClose }) {
           className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${theme === 'dark'
             ? 'border-[#1e2a45] text-slate-400 hover:border-rose-500 hover:text-rose-400'
             : 'border-gray-300 text-slate-600 hover:border-rose-500 hover:text-rose-600'
-          }`}>
+            }`}>
           ✖ Close
         </button>
       </div>
@@ -110,7 +115,7 @@ export default function SlotPicker({ room, onBooked, onClose }) {
           className={`px-4 py-2.5 rounded-xl ${theme === 'dark'
             ? 'bg-[#0a0f1e] border-[#1e2a45] text-slate-100 focus:border-indigo-500'
             : 'bg-white border-gray-300 text-slate-900 focus:border-indigo-500'
-          } border text-sm outline-none transition-all`} />
+            } border text-sm outline-none transition-all`} />
       </div>
 
       <div className="grid grid-cols-2 gap-6 mb-4">
@@ -124,10 +129,10 @@ export default function SlotPicker({ room, onBooked, onClose }) {
             Start Time
           </div>
 
-          <div className={`flex items-center gap-3 px-4 py-3 rounded-xl ${theme === 'dark' 
+          <div className={`flex items-center gap-3 px-4 py-3 rounded-xl ${theme === 'dark'
             ? 'bg-[#070c1a] border-[#1e2a45]'
             : 'bg-white border-gray-300'
-          } border mb-3`}>
+            } border mb-3`}>
             <span className={theme === 'dark' ? 'text-slate-500' : 'text-slate-600'}>🕒</span>
             <input
               type="time"
@@ -148,10 +153,10 @@ export default function SlotPicker({ room, onBooked, onClose }) {
             End Time
           </div>
 
-          <div className={`flex items-center gap-3 px-4 py-3 rounded-xl ${theme === 'dark' 
+          <div className={`flex items-center gap-3 px-4 py-3 rounded-xl ${theme === 'dark'
             ? 'bg-[#070c1a] border-[#1e2a45]'
             : 'bg-white border-gray-300'
-          } border mb-3`}>
+            } border mb-3`}>
             <span className={theme === 'dark' ? 'text-slate-500' : 'text-slate-600'}>🕒</span>
             <input
               type="time"
@@ -172,13 +177,19 @@ export default function SlotPicker({ room, onBooked, onClose }) {
         <div className={`mb-3 px-4 py-2 rounded-xl ${theme === 'dark'
           ? 'bg-rose-500/8 border-rose-500/20 text-rose-400'
           : 'bg-rose-100 border-rose-300 text-rose-700'
-        } border text-sm`}>❌ {error}</div>
+          } border text-sm`}>❌ {error}</div>
+      )}
+      {!canBook && (
+        <div className={`mb-3 px-4 py-2 rounded-xl ${theme === 'dark'
+          ? 'bg-amber-500/8 border-amber-500/20 text-amber-400'
+          : 'bg-amber-50 border-amber-300 text-amber-700'
+          } border text-sm`}>🔒 Booking restricted to specific users for this room.</div>
       )}
       {success && (
         <div className={`mb-3 px-4 py-2 rounded-xl ${theme === 'dark'
           ? 'bg-emerald-500/8 border-emerald-500/20 text-emerald-400'
           : 'bg-emerald-100 border-emerald-300 text-emerald-700'
-        } border text-sm`}>✅ {success}</div>
+          } border text-sm`}>✅ {success}</div>
       )}
 
       {/* Confirm form */}
@@ -187,7 +198,7 @@ export default function SlotPicker({ room, onBooked, onClose }) {
           <div className={`px-4 py-3 rounded-xl ${theme === 'dark'
             ? 'bg-emerald-500/8 border-emerald-500/20'
             : 'bg-emerald-100 border-emerald-300'
-          } border mb-4`}>
+            } border mb-4`}>
             <div className={`text-sm font-semibold ${theme === 'dark' ? 'text-emerald-400' : 'text-emerald-700'}`}>
               📅 {room.name} · {date} · {ibStart.slice(11, 16)} – {ibEnd.slice(11, 16)}
             </div>
@@ -200,9 +211,18 @@ export default function SlotPicker({ room, onBooked, onClose }) {
                 className={`w-full px-4 py-2.5 rounded-xl ${theme === 'dark'
                   ? 'bg-[#0a0f1e] border-[#1e2a45] text-slate-100 placeholder-slate-600 focus:border-indigo-500'
                   : 'bg-white border-gray-300 text-slate-900 placeholder-slate-400 focus:border-indigo-500'
-                } border text-sm outline-none transition-all`} />
+                  } border text-sm outline-none transition-all`} />
             </div>
-            <button onClick={handleConfirm} disabled={booking}
+            <div className="flex-1">
+              <label className={`block text-xs font-semibold ${theme === 'dark' ? 'text-slate-500' : 'text-slate-600'} uppercase tracking-wider mb-1.5`}>Cost Centre</label>
+              <input type="text" value={costCentre} onChange={e => setCostCentre(e.target.value)}
+                placeholder="e.g. CC-1234"
+                className={`w-full px-4 py-2.5 rounded-xl ${theme === 'dark'
+                  ? 'bg-[#0a0f1e] border-[#1e2a45] text-slate-100 placeholder-slate-600 focus:border-indigo-500'
+                  : 'bg-white border-gray-300 text-slate-900 placeholder-slate-400 focus:border-indigo-500'
+                  } border text-sm outline-none transition-all`} />
+            </div>
+            <button onClick={handleConfirm} disabled={booking || !canBook}
               className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-bold text-sm hover:from-emerald-600 hover:to-teal-600 transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-emerald-500/25 disabled:opacity-50 whitespace-nowrap">
               {booking ? '⏳...' : '✅ Confirm Booking'}
             </button>
@@ -210,7 +230,7 @@ export default function SlotPicker({ room, onBooked, onClose }) {
               className={`px-4 py-2.5 rounded-xl border text-sm transition-all ${theme === 'dark'
                 ? 'border-[#1e2a45] text-slate-400 hover:border-rose-500 hover:text-rose-400'
                 : 'border-gray-300 text-slate-600 hover:border-rose-500 hover:text-rose-600'
-              }`}>
+                }`}>
               ✖
             </button>
           </div>

@@ -34,6 +34,7 @@ CREATE TABLE IF NOT EXISTS location_wise_rooms (
     cabin_type TEXT,
     capacity   INTEGER NOT NULL DEFAULT 0,
     amenities  TEXT NOT NULL DEFAULT '[]',
+    allowed_users TEXT NOT NULL DEFAULT '[]',
     vc_enabled INTEGER DEFAULT 0 CHECK (vc_enabled IN (0,1)),
     power_points INTEGER DEFAULT 0,
    status     TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active','inactive')),
@@ -76,6 +77,7 @@ CREATE TABLE if not exists bookings (
     status     TEXT NOT NULL DEFAULT 'confirmed' CHECK (status IN ('confirmed','cancelled')),
     attendees  TEXT NOT NULL DEFAULT '[]',
     notes      TEXT NOT NULL DEFAULT '',
+    cost_centre TEXT NOT NULL DEFAULT '',
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL,
     actual_check_in TEXT,
@@ -92,6 +94,8 @@ CREATE INDEX IF NOT EXISTS idx_bookings_user ON bookings(user_id);
 _MIGRATIONS = [
     "ALTER TABLE users ADD COLUMN role TEXT NOT NULL DEFAULT 'employee'",
     "ALTER TABLE users ADD COLUMN password_hash TEXT NOT NULL DEFAULT ''",
+    "ALTER TABLE bookings ADD COLUMN cost_centre TEXT NOT NULL DEFAULT ''",
+    "ALTER TABLE location_wise_rooms ADD COLUMN allowed_users TEXT NOT NULL DEFAULT '[]'",
 ]
 
 
@@ -121,6 +125,7 @@ def _row_to_room(row: sqlite3.Row) -> LocationWiseRoom:
         cabin_type=row["cabin_type"],
         capacity=row["capacity"],
         amenities=json.loads(row["amenities"]),
+        allowed_users=json.loads(row["allowed_users"]) if "allowed_users" in row.keys() else [],
         vc_enabled=bool(row["vc_enabled"]),
         power_points=row["power_points"],
         status=row["status"],
@@ -134,7 +139,8 @@ def _row_to_booking(row: sqlite3.Row) -> Booking:
         booking_id=row["booking_id"], room_id=row["room_id"], user_id=row["user_id"],
         title=row["title"], start_time=row["start_time"], end_time=row["end_time"],
         status=row["status"], attendees=json.loads(row["attendees"]),
-        notes=row["notes"], created_at=row["created_at"], updated_at=row["updated_at"],
+        notes=row["notes"], cost_centre=row["cost_centre"] if "cost_centre" in row.keys() else "",
+        created_at=row["created_at"], updated_at=row["updated_at"],
         actual_check_in=row["actual_check_in"] if "actual_check_in" in row.keys() else None,
         actual_check_out=row["actual_check_out"] if "actual_check_out" in row.keys() else None,
     )
@@ -206,6 +212,7 @@ class SQLiteRoomRepo(RoomRepository):
                     building,
                     room_type,
                     cabin_type,
+                    allowed_users,
                     vc_enabled,
                     power_points,
                     created_at,
@@ -223,6 +230,7 @@ class SQLiteRoomRepo(RoomRepository):
                 room.building,
                 room.room_type,
                 room.cabin_type,
+                json.dumps(room.allowed_users),
                 int(room.vc_enabled),  # ✅ bool → SQLite int
                 int(room.power_points),
                 room.created_at,
@@ -244,6 +252,7 @@ class SQLiteRoomRepo(RoomRepository):
                     building=?,
                     room_type=?,
                     cabin_type=?,
+                    allowed_users=?,
                     vc_enabled=?,
                     power_points=?,
                     updated_at=?
@@ -258,6 +267,7 @@ class SQLiteRoomRepo(RoomRepository):
                 room.building,
                 room.room_type,
                 room.cabin_type,
+                json.dumps(room.allowed_users),
                 int(room.vc_enabled),
                 int(room.power_points),
                 room.updated_at,
@@ -303,16 +313,16 @@ class SQLiteBookingRepo(BookingRepository):
     def create(self, booking: Booking) -> Booking:
         with _connect(self._db_path) as conn:
             conn.execute(
-                "INSERT INTO bookings (booking_id,room_id,user_id,title,start_time,end_time,status,attendees,notes,created_at,updated_at , actual_check_in,actual_check_out) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
-                (booking.booking_id, booking.room_id, booking.user_id, booking.title, booking.start_time, booking.end_time, booking.status, json.dumps(booking.attendees), booking.notes, booking.created_at, booking.updated_at, booking.actual_check_in, booking.actual_check_out),
+                "INSERT INTO bookings (booking_id,room_id,user_id,title,start_time,end_time,status,attendees,notes,cost_centre,created_at,updated_at , actual_check_in,actual_check_out) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                (booking.booking_id, booking.room_id, booking.user_id, booking.title, booking.start_time, booking.end_time, booking.status, json.dumps(booking.attendees), booking.notes, booking.cost_centre, booking.created_at, booking.updated_at, booking.actual_check_in, booking.actual_check_out),
             )
         return booking
 
     def update(self, booking: Booking) -> Booking:
         with _connect(self._db_path) as conn:
             conn.execute(
-                "UPDATE bookings SET room_id=?,user_id=?,title=?,start_time=?,end_time=?,status=?,attendees=?,notes=?,updated_at=? , actual_check_in=?,actual_check_out=? WHERE booking_id=?",
-                (booking.room_id, booking.user_id, booking.title, booking.start_time, booking.end_time, booking.status, json.dumps(booking.attendees), booking.notes, booking.updated_at,booking.actual_check_in, booking.actual_check_out, booking.booking_id),
+                "UPDATE bookings SET room_id=?,user_id=?,title=?,start_time=?,end_time=?,status=?,attendees=?,notes=?,cost_centre=?,updated_at=? , actual_check_in=?,actual_check_out=? WHERE booking_id=?",
+                (booking.room_id, booking.user_id, booking.title, booking.start_time, booking.end_time, booking.status, json.dumps(booking.attendees), booking.notes, booking.cost_centre, booking.updated_at,booking.actual_check_in, booking.actual_check_out, booking.booking_id),
             )
         return booking
 

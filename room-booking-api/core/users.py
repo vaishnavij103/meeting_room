@@ -84,6 +84,24 @@ def login_user(repo: UserRepository, email: str, password: str) -> User:
     return user
 
 
+def reset_password(repo: UserRepository, data: dict) -> User:
+    """Reset an existing user's password by email."""
+    email = data.get("email", "").strip().lower()
+    if not email or not re.match(r'^[^@]+@[^@]+\.[^@]+', email):
+        raise BookingError("invalid email", http_status=422)
+
+    password = data.get("password", "")
+    if not password or len(password) < 4:
+        raise BookingError("password must be at least 4 characters", http_status=422)
+
+    user = repo.get_by_email(email)
+    if user is None:
+        raise BookingError("user not found", http_status=404)
+
+    user.password_hash = _hash_password(password)
+    return repo.update(user)
+
+
 def create_user(repo: UserRepository, data: dict) -> User:
     """Admin-created user (backward compat, sets default password)."""
     return register_user(repo, data)

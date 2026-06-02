@@ -112,6 +112,12 @@ def create_booking(
     if user is None:
         raise BookingError("user not found", http_status=404)
 
+    # Enforce per-room allowed_users if configured (admins bypass)
+    allowed = getattr(room, "allowed_users", None)
+    if allowed and len(allowed) > 0 and user.role != "admin":
+        if user.user_id not in allowed:
+            raise BookingError("user not allowed to book this room", http_status=403)
+
     # Check for conflicts
     conflicts = check_conflicts(booking_repo, data["room_id"], data["start_time"], data["end_time"])
     if conflicts:
@@ -128,6 +134,7 @@ def create_booking(
         status="confirmed",
         attendees=data.get("attendees", []),
         notes=data.get("notes", ""),
+        cost_centre=data.get("cost_centre", ""),
         created_at=now,
         updated_at=now,
     )
@@ -177,6 +184,8 @@ def update_booking(
         booking.notes = data["notes"]
     if "attendees" in data:
         booking.attendees = data["attendees"]
+    if "cost_centre" in data:
+        booking.cost_centre = data["cost_centre"]
 
     booking.updated_at = _now_iso()
     return booking_repo.update(booking)

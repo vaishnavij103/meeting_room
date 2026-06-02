@@ -57,7 +57,7 @@ export default function BookingsPage() {
     "Wifi",
     "AC",
     "Whiteboard",
-    "Coffee Bar",
+    "Food and Refreshment",
     "Video Call",
     "TV",
   ];
@@ -182,7 +182,7 @@ export default function BookingsPage() {
         <div className={`w-[260px] shrink-0 p-4 rounded-2xl ${theme === 'dark'
           ? 'bg-gradient-to-br from-[#0f1420] to-[#161c2e] border-[#1e2a45]'
           : 'bg-gradient-to-br from-gray-50 to-gray-100 border-gray-200'
-        } border`}>
+          } border`}>
 
           <div className="flex items-center justify-between mb-4">
             <span className={`font-bold ${theme === 'dark' ? 'text-indigo-400' : 'text-indigo-600'}`}>⚙ Filters</span>
@@ -209,7 +209,7 @@ export default function BookingsPage() {
               className={`w-full px-3 py-2 rounded-xl ${theme === 'dark'
                 ? 'bg-[#0a0f1e] border-[#1e2a45] text-slate-100'
                 : 'bg-white border-gray-300 text-slate-900'
-              } border text-sm`}
+                } border text-sm`}
             />
           </div>
 
@@ -222,7 +222,7 @@ export default function BookingsPage() {
               className={`w-full px-3 py-2 rounded-xl ${theme === 'dark'
                 ? 'bg-[#0a0f1e] border-[#1e2a45] text-slate-100'
                 : 'bg-white border-gray-300 text-slate-900'
-              } border text-sm`}
+                } border text-sm`}
             >
               <option value="all">All Statuses</option>
               <option value="active">Active</option>
@@ -239,7 +239,7 @@ export default function BookingsPage() {
               className={`w-full px-3 py-2 rounded-xl ${theme === 'dark'
                 ? 'bg-[#0a0f1e] border-[#1e2a45] text-slate-100'
                 : 'bg-white border-gray-300 text-slate-900'
-              } border text-sm`}
+                } border text-sm`}
             >
               <option value="any">Any</option>
               <option value="small">1–4</option>
@@ -276,12 +276,13 @@ export default function BookingsPage() {
 
         {/* Room Cards Grid */}
         <div className="flex-1">
-          <div className="grid grid-cols-3 gap-4 mb-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-2">
             {filteredRooms.map(room => (
               <RoomCard
                 key={room.room_id}
                 room={room}
                 selected={selectedRoom?.room_id === room.room_id}
+                canBook={(room.allowed_users?.length || 0) === 0 || isAdmin || (user && (room.allowed_users || []).includes(user.user_id))}
                 onSelect={r =>
                   setSelectedRoom(
                     selectedRoom?.room_id === r.room_id ? null : r
@@ -375,7 +376,7 @@ export default function BookingsPage() {
               💾 Save
             </button>
             <button onClick={() => setRescheduleTarget(null)}
-                  className={`px-4 py-2 rounded-xl border text-sm transition-all ${theme === 'dark' ? 'border-[#1e2a45] text-slate-400 hover:border-rose-500 hover:text-rose-400' : 'border-gray-300 text-slate-600 hover:border-rose-500 hover:text-rose-600'}`}>
+              className={`px-4 py-2 rounded-xl border text-sm transition-all ${theme === 'dark' ? 'border-[#1e2a45] text-slate-400 hover:border-rose-500 hover:text-rose-400' : 'border-gray-300 text-slate-600 hover:border-rose-500 hover:text-rose-600'}`}>
               ✖ Cancel
             </button>
           </div>

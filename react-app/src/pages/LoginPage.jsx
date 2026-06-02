@@ -2,8 +2,9 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTheme } from '../ThemeContext';
 import { useAuth } from '../AuthContext';
-import { login, register } from '../api';
+import { login, register, resetPassword as resetPasswordApi } from '../api';
 import logo from "../assets/Apexon_id6ht3QYLO_0.png";
+import { Visibility, VisibilityOff } from '@mui/icons-material';
 
 const DEPARTMENTS = ['', 'Engineering', 'Design', 'Product', 'Marketing', 'Sales', 'HR', 'Finance', 'Operations', 'Legal', 'Support', 'Other'];
 
@@ -13,6 +14,7 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const [tab, setTab] = useState('login');
   const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
   const [loading, setLoading] = useState(false);
 
   // Login fields
@@ -24,6 +26,12 @@ export default function LoginPage() {
   const [regEmail, setRegEmail] = useState('');
   const [regPassword, setRegPassword] = useState('');
   const [regDept, setRegDept] = useState('');
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
+  const [showRegPassword, setShowRegPassword] = useState(false);
+  const [forgotMode, setForgotMode] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
+  const [resetPwd, setResetPwd] = useState('');
+  const [resetConfirmPwd, setResetConfirmPwd] = useState('');
 
   if (user) { navigate('/', { replace: true }); return null; }
 
@@ -44,6 +52,7 @@ export default function LoginPage() {
   const handleRegister = async (e) => {
     e.preventDefault();
     setError('');
+    setSuccessMessage('');
     if (!regName.trim()) { setError('Full name is required.'); return; }
     if (!regEmail.trim() || !regEmail.includes('@')) { setError('Valid email is required.'); return; }
     if (!regPassword || regPassword.length < 4) { setError('Password must be at least 4 characters.'); return; }
@@ -54,6 +63,26 @@ export default function LoginPage() {
       navigate('/');
     } catch (err) {
       setError(err.status === 409 ? 'Email already registered. Please login.' : (err.detail || err.message));
+    } finally { setLoading(false); }
+  };
+
+  const handleResetPassword = async (e) => {
+    e.preventDefault();
+    setError('');
+    setSuccessMessage('');
+    if (!resetEmail.trim() || !resetEmail.includes('@')) { setError('Valid email is required.'); return; }
+    if (!resetPwd || resetPwd.length < 4) { setError('Password must be at least 4 characters.'); return; }
+    if (resetPwd !== resetConfirmPwd) { setError('Passwords do not match.'); return; }
+    setLoading(true);
+    try {
+      await resetPasswordApi(resetEmail.trim(), resetPwd);
+      setSuccessMessage('Password reset successfully. Please sign in.');
+      setForgotMode(false);
+      setResetEmail('');
+      setResetPwd('');
+      setResetConfirmPwd('');
+    } catch (err) {
+      setError(err.status === 404 ? 'No account found for that email.' : (err.detail || err.message));
     } finally { setLoading(false); }
   };
 
@@ -99,7 +128,7 @@ export default function LoginPage() {
       {/* RIGHT PANE - Form */}
       <div className="flex-1 flex items-center justify-center p-8 relative">
         <div className="w-full max-w-md animate-fade-up delay-100">
-          
+
           {/* Mobile-only Logo */}
           <div className="lg:hidden text-center mb-8">
             <div className="relative inline-flex items-center justify-center mb-5 group">
@@ -121,114 +150,188 @@ export default function LoginPage() {
           <div className={`${theme === 'dark'
             ? 'bg-[#0f1420] border-[#1e2a45] shadow-[0_0_40px_rgba(0,0,0,0.3)]'
             : 'bg-white border-gray-100 shadow-2xl shadow-indigo-500/5'
-          } border rounded-3xl p-8`}>
-            
+            } border rounded-3xl p-8`}>
+
             <h2 className={`text-xl font-bold mb-6 ${theme === 'dark' ? 'text-slate-100' : 'text-slate-800'}`}>
-              {tab === 'login' ? 'Welcome back' : 'Create an account'}
+              {forgotMode ? 'Reset your password' : (tab === 'login' ? 'Welcome back' : 'Create an account')}
             </h2>
 
-          {/* Tabs */}
-          <div className={`flex gap-1 mb-8 ${theme === 'dark' ? 'bg-[#080b14]' : 'bg-gray-50'} rounded-xl p-1.5 border ${theme === 'dark' ? 'border-[#1e2a45]' : 'border-gray-100'}`}>
-            {['login', 'register'].map(t => (
-              <button
-                key={t}
-                onClick={() => { setTab(t); setError(''); }}
-                className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all duration-300 ${
-                  tab === t
-                    ? theme === 'dark' ? 'bg-[#1e2a45] text-indigo-300 shadow-sm' : 'bg-white text-indigo-600 shadow-sm border border-gray-200/50'
-                    : 'text-slate-500 hover:text-slate-300'
-                }`}
-              >
-                {t === 'login' ? '🔑 Login' : '📝 Register'}
-              </button>
-            ))}
-          </div>
-
-          {error && (
-            <div className={`mb-5 px-4 py-3 rounded-xl ${theme === 'dark'
-              ? 'bg-rose-500/10 border-rose-500/20 text-rose-400'
-              : 'bg-rose-50 border-rose-200 text-rose-700'
-            } border text-sm`}>
-              ❌ {error}
-            </div>
-          )}
-
-          {tab === 'login' ? (
-            <form onSubmit={handleLogin} className="space-y-5">
-              <div>
-                <label className={`block text-xs font-semibold ${theme === 'dark' ? 'text-slate-500' : 'text-slate-600'} uppercase tracking-wider mb-1.5`}>Email</label>
-                <input type="email" value={email} onChange={e => setEmail(e.target.value)}
-                  placeholder="you@apexon.com"
-                  className={`w-full px-4 py-2.5 rounded-xl ${theme === 'dark'
-                    ? 'bg-[#080b14] border-[#1e2a45] text-slate-100 placeholder-slate-600 focus:border-indigo-500 focus:ring-indigo-500/20'
-                    : 'bg-gray-50 border-gray-200 text-slate-900 placeholder-slate-400 focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-500/10'
-                  } border text-sm focus:ring-1 outline-none transition-all`} />
+            {forgotMode ? (
+              <div className="flex items-center justify-between mb-8">
+                <p className={`text-sm ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
+                  Enter the email for your account and choose a new password.
+                </p>
+                <button type="button" onClick={() => { setForgotMode(false); setError(''); setSuccessMessage(''); }}
+                  className="text-sm text-indigo-500 hover:text-indigo-600 font-semibold focus:outline-none">
+                  ← Back to login
+                </button>
               </div>
-              <div>
-                <label className={`block text-xs font-semibold ${theme === 'dark' ? 'text-slate-500' : 'text-slate-600'} uppercase tracking-wider mb-1.5`}>Password</label>
-                <input type="password" value={password} onChange={e => setPassword(e.target.value)}
-                  placeholder="Enter your password"
-                  className={`w-full px-4 py-2.5 rounded-xl ${theme === 'dark'
-                    ? 'bg-[#080b14] border-[#1e2a45] text-slate-100 placeholder-slate-600 focus:border-indigo-500 focus:ring-indigo-500/20'
-                    : 'bg-gray-50 border-gray-200 text-slate-900 placeholder-slate-400 focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-500/10'
-                  } border text-sm focus:ring-1 outline-none transition-all`} />
+            ) : (
+              <div className={`flex gap-1 mb-8 ${theme === 'dark' ? 'bg-[#080b14]' : 'bg-gray-50'} rounded-xl p-1.5 border ${theme === 'dark' ? 'border-[#1e2a45]' : 'border-gray-100'}`}>
+                {['login', 'register'].map(t => (
+                  <button
+                    key={t}
+                    onClick={() => { setTab(t); setError(''); setSuccessMessage(''); setForgotMode(false); }}
+                    className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all duration-300 ${tab === t
+                      ? theme === 'dark' ? 'bg-[#1e2a45] text-indigo-300 shadow-sm' : 'bg-white text-indigo-600 shadow-sm border border-gray-200/50'
+                      : 'text-slate-500 hover:text-slate-300'
+                      }`}
+                  >
+                    {t === 'login' ? '🔑 Login' : '📝 Register'}
+                  </button>
+                ))}
               </div>
-              <button type="submit" disabled={loading}
-                className="w-full py-3 mt-2 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-bold text-sm hover:from-indigo-600 hover:to-purple-700 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_10px_20px_-10px_rgba(99,102,241,0.5)] disabled:opacity-50 disabled:transform-none">
-                {loading ? '⏳ Signing in...' : '🔑 Sign In'}
-              </button>
-            </form>
-          ) : (
-            <form onSubmit={handleRegister} className="space-y-5">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className={`block text-xs font-semibold ${theme === 'dark' ? 'text-slate-500' : 'text-slate-600'} uppercase tracking-wider mb-1.5`}>Full Name</label>
-                  <input type="text" value={regName} onChange={e => setRegName(e.target.value)}
-                    placeholder="Alex Johnson"
-                    className={`w-full px-4 py-2.5 rounded-xl ${theme === 'dark'
-                      ? 'bg-[#080b14] border-[#1e2a45] text-slate-100 placeholder-slate-600 focus:border-indigo-500 focus:ring-indigo-500/20'
-                      : 'bg-gray-50 border-gray-200 text-slate-900 placeholder-slate-400 focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-500/10'
-                    } border text-sm focus:ring-1 outline-none transition-all`} />
-                </div>
+            )}
+
+            {error && (
+              <div className={`mb-5 px-4 py-3 rounded-xl ${theme === 'dark'
+                ? 'bg-rose-500/10 border-rose-500/20 text-rose-400'
+                : 'bg-rose-50 border-rose-200 text-rose-700'
+                } border text-sm`}>
+                ❌ {error}
+              </div>
+            )}
+
+            {successMessage && (
+              <div className={`mb-5 px-4 py-3 rounded-xl ${theme === 'dark'
+                ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-300'
+                : 'bg-emerald-50 border-emerald-200 text-emerald-700'
+                } border text-sm`}>
+                ✅ {successMessage}
+              </div>
+            )}
+
+            {forgotMode && (
+              <form onSubmit={handleResetPassword} className="space-y-5">
                 <div>
                   <label className={`block text-xs font-semibold ${theme === 'dark' ? 'text-slate-500' : 'text-slate-600'} uppercase tracking-wider mb-1.5`}>Email</label>
-                  <input type="email" value={regEmail} onChange={e => setRegEmail(e.target.value)}
+                  <input type="email" value={resetEmail} onChange={e => setResetEmail(e.target.value)}
                     placeholder="you@apexon.com"
                     className={`w-full px-4 py-2.5 rounded-xl ${theme === 'dark'
                       ? 'bg-[#080b14] border-[#1e2a45] text-slate-100 placeholder-slate-600 focus:border-indigo-500 focus:ring-indigo-500/20'
                       : 'bg-gray-50 border-gray-200 text-slate-900 placeholder-slate-400 focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-500/10'
-                    } border text-sm focus:ring-1 outline-none transition-all`} />
+                      } border text-sm focus:ring-1 outline-none transition-all`} />
                 </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className={`block text-xs font-semibold ${theme === 'dark' ? 'text-slate-500' : 'text-slate-600'} uppercase tracking-wider mb-1.5`}>Password</label>
-                  <input type="password" value={regPassword} onChange={e => setRegPassword(e.target.value)}
+                <div className="relative">
+                  <label className={`block text-xs font-semibold ${theme === 'dark' ? 'text-slate-500' : 'text-slate-600'} uppercase tracking-wider mb-1.5`}>New Password</label>
+                  <input type={showRegPassword ? 'text' : 'password'} value={resetPwd} onChange={e => setResetPwd(e.target.value)}
                     placeholder="Min 4 characters"
                     className={`w-full px-4 py-2.5 rounded-xl ${theme === 'dark'
                       ? 'bg-[#080b14] border-[#1e2a45] text-slate-100 placeholder-slate-600 focus:border-indigo-500 focus:ring-indigo-500/20'
                       : 'bg-gray-50 border-gray-200 text-slate-900 placeholder-slate-400 focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-500/10'
-                    } border text-sm focus:ring-1 outline-none transition-all`} />
+                      } border text-sm focus:ring-1 outline-none transition-all`} />
+                  <button type="button" onClick={() => setShowRegPassword((prev) => !prev)}
+                    className="absolute right-3 top-[30px] flex items-center text-slate-500 hover:text-slate-700 focus:outline-none" title={showRegPassword ? 'Hide password' : 'Show password'}>
+                    {showRegPassword ? <VisibilityOff sx={{ fontSize: 20 }} /> : <Visibility sx={{ fontSize: 20 }} />}
+                  </button>
                 </div>
-                <div>
-                  <label className={`block text-xs font-semibold ${theme === 'dark' ? 'text-slate-500' : 'text-slate-600'} uppercase tracking-wider mb-1.5`}>Department</label>
-                  <select value={regDept} onChange={e => setRegDept(e.target.value)}
+                <div className="relative">
+                  <label className={`block text-xs font-semibold ${theme === 'dark' ? 'text-slate-500' : 'text-slate-600'} uppercase tracking-wider mb-1.5`}>Confirm Password</label>
+                  <input type={showRegPassword ? 'text' : 'password'} value={resetConfirmPwd} onChange={e => setResetConfirmPwd(e.target.value)}
+                    placeholder="Repeat your new password"
                     className={`w-full px-4 py-2.5 rounded-xl ${theme === 'dark'
-                      ? 'bg-[#080b14] border-[#1e2a45] text-slate-100 focus:border-indigo-500'
-                      : 'bg-gray-50 border-gray-200 text-slate-900 focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-500/10'
-                    } border text-sm outline-none transition-all`}>
-                    <option value="">Select...</option>
-                    {DEPARTMENTS.filter(Boolean).map(d => <option key={d} value={d}>{d}</option>)}
-                  </select>
+                      ? 'bg-[#080b14] border-[#1e2a45] text-slate-100 placeholder-slate-600 focus:border-indigo-500 focus:ring-indigo-500/20'
+                      : 'bg-gray-50 border-gray-200 text-slate-900 placeholder-slate-400 focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-500/10'
+                      } border text-sm focus:ring-1 outline-none transition-all`} />
                 </div>
-              </div>
-              <button type="submit" disabled={loading}
-                className="w-full py-3 mt-2 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-bold text-sm hover:from-indigo-600 hover:to-purple-700 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_10px_20px_-10px_rgba(99,102,241,0.5)] disabled:opacity-50 disabled:transform-none">
-                {loading ? '⏳ Creating account...' : '📝 Create Account'}
-              </button>
-            </form>
-          )}
-        </div>
+                <button type="submit" disabled={loading}
+                  className="w-full py-3 mt-2 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-bold text-sm hover:from-indigo-600 hover:to-purple-700 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_10px_20px_-10px_rgba(99,102,241,0.5)] disabled:opacity-50 disabled:transform-none">
+                  {loading ? '⏳ Resetting password...' : '🔐 Reset Password'}
+                </button>
+              </form>
+            )}
+            {!forgotMode && tab === 'login' && (
+              <form onSubmit={handleLogin} className="space-y-5">
+                <div>
+                  <label className={`block text-xs font-semibold ${theme === 'dark' ? 'text-slate-500' : 'text-slate-600'} uppercase tracking-wider mb-1.5`}>Email</label>
+                  <input type="email" value={email} onChange={e => setEmail(e.target.value)}
+                    placeholder="you@apexon.com"
+                    className={`w-full px-4 py-2.5 rounded-xl ${theme === 'dark'
+                      ? 'bg-[#080b14] border-[#1e2a45] text-slate-100 placeholder-slate-600 focus:border-indigo-500 focus:ring-indigo-500/20'
+                      : 'bg-gray-50 border-gray-200 text-slate-900 placeholder-slate-400 focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-500/10'
+                      } border text-sm focus:ring-1 outline-none transition-all`} />
+                </div>
+                <div className="relative">
+                  <label className={`block text-xs font-semibold ${theme === 'dark' ? 'text-slate-500' : 'text-slate-600'} uppercase tracking-wider mb-1.5`}>Password</label>
+                  <input type={showLoginPassword ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)}
+                    placeholder="Enter your password"
+                    className={`w-full px-4 py-2.5 rounded-xl ${theme === 'dark'
+                      ? 'bg-[#080b14] border-[#1e2a45] text-slate-100 placeholder-slate-600 focus:border-indigo-500 focus:ring-indigo-500/20'
+                      : 'bg-gray-50 border-gray-200 text-slate-900 placeholder-slate-400 focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-500/10'
+                      } border text-sm focus:ring-1 outline-none transition-all`} />
+                  <button type="button" onClick={() => setShowLoginPassword((prev) => !prev)}
+                    className="absolute right-3 top-[38px] flex items-center text-slate-500 hover:text-slate-700 focus:outline-none" title={showLoginPassword ? 'Hide password' : 'Show password'}>
+                    {showLoginPassword ? <VisibilityOff sx={{ fontSize: 20 }} /> : <Visibility sx={{ fontSize: 20 }} />}
+                  </button>
+                </div>
+                <div className="flex items-center justify-between text-sm text-slate-500">
+                  <span></span>
+                  <button type="button" onClick={() => { setForgotMode(true); setError(''); setSuccessMessage(''); }}
+                    className="font-semibold text-indigo-600 hover:text-indigo-500 focus:outline-none">
+                    Forgot password?
+                  </button>
+                </div>
+                <button type="submit" disabled={loading}
+                  className="w-full py-3 mt-2 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-bold text-sm hover:from-indigo-600 hover:to-purple-700 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_10px_20px_-10px_rgba(99,102,241,0.5)] disabled:opacity-50 disabled:transform-none">
+                  {loading ? '⏳ Signing in...' : '🔑 Sign In'}
+                </button>
+              </form>
+            )}
+            {!forgotMode && tab === 'register' && (
+              <form onSubmit={handleRegister} className="space-y-5">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className={`block text-xs font-semibold ${theme === 'dark' ? 'text-slate-500' : 'text-slate-600'} uppercase tracking-wider mb-1.5`}>Full Name</label>
+                    <input type="text" value={regName} onChange={e => setRegName(e.target.value)}
+                      placeholder="Alex Johnson"
+                      className={`w-full px-4 py-2.5 rounded-xl ${theme === 'dark'
+                        ? 'bg-[#080b14] border-[#1e2a45] text-slate-100 placeholder-slate-600 focus:border-indigo-500 focus:ring-indigo-500/20'
+                        : 'bg-gray-50 border-gray-200 text-slate-900 placeholder-slate-400 focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-500/10'
+                        } border text-sm focus:ring-1 outline-none transition-all`} />
+                  </div>
+                  <div>
+                    <label className={`block text-xs font-semibold ${theme === 'dark' ? 'text-slate-500' : 'text-slate-600'} uppercase tracking-wider mb-1.5`}>Email</label>
+                    <input type="email" value={regEmail} onChange={e => setRegEmail(e.target.value)}
+                      placeholder="you@apexon.com"
+                      className={`w-full px-4 py-2.5 rounded-xl ${theme === 'dark'
+                        ? 'bg-[#080b14] border-[#1e2a45] text-slate-100 placeholder-slate-600 focus:border-indigo-500 focus:ring-indigo-500/20'
+                        : 'bg-gray-50 border-gray-200 text-slate-900 placeholder-slate-400 focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-500/10'
+                        } border text-sm focus:ring-1 outline-none transition-all`} />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="relative">
+                    <label className={`block text-xs font-semibold ${theme === 'dark' ? 'text-slate-500' : 'text-slate-600'} uppercase tracking-wider mb-1.5`}>Password</label>
+                    <input type={showRegPassword ? 'text' : 'password'} value={regPassword} onChange={e => setRegPassword(e.target.value)}
+                      placeholder="Min 4 characters"
+                      className={`w-full px-4 py-2.5 rounded-xl ${theme === 'dark'
+                        ? 'bg-[#080b14] border-[#1e2a45] text-slate-100 placeholder-slate-600 focus:border-indigo-500 focus:ring-indigo-500/20'
+                        : 'bg-gray-50 border-gray-200 text-slate-900 placeholder-slate-400 focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-500/10'
+                        } border text-sm focus:ring-1 outline-none transition-all`} />
+                    <button type="button" onClick={() => setShowRegPassword((prev) => !prev)}
+                      className="absolute right-3 top-[38px] flex items-center text-slate-500 hover:text-slate-700 focus:outline-none" title={showRegPassword ? 'Hide password' : 'Show password'}>
+                      {showRegPassword ? <VisibilityOff sx={{ fontSize: 20 }} /> : <Visibility sx={{ fontSize: 20 }} />}
+                    </button>
+                  </div>
+                  <div>
+                    <label className={`block text-xs font-semibold ${theme === 'dark' ? 'text-slate-500' : 'text-slate-600'} uppercase tracking-wider mb-1.5`}>Department</label>
+                    <select value={regDept} onChange={e => setRegDept(e.target.value)}
+                      className={`w-full px-4 py-2.5 rounded-xl ${theme === 'dark'
+                        ? 'bg-[#080b14] border-[#1e2a45] text-slate-100 focus:border-indigo-500'
+                        : 'bg-gray-50 border-gray-200 text-slate-900 focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-500/10'
+                        } border text-sm outline-none transition-all`}>
+                      <option value="">Select...</option>
+                      {DEPARTMENTS.filter(Boolean).map(d => <option key={d} value={d}>{d}</option>)}
+                    </select>
+                  </div>
+                </div>
+                <button type="submit" disabled={loading}
+                  className="w-full py-3 mt-2 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-bold text-sm hover:from-indigo-600 hover:to-purple-700 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_10px_20px_-10px_rgba(99,102,241,0.5)] disabled:opacity-50 disabled:transform-none">
+                  {loading ? '⏳ Creating account...' : '📝 Create Account'}
+                </button>
+              </form>
+            )}
+          </div>
         </div>
       </div>
     </div>

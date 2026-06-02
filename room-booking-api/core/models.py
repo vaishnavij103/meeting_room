@@ -34,6 +34,7 @@ class LocationWiseRoom:
     vc_enabled: bool = False
     power_points: bool = False
     remarks: Optional[str] = None
+    allowed_users: List[str] = field(default_factory=list)
 
 
 @dataclass
@@ -62,6 +63,7 @@ class Booking:
     notes: str
     created_at: str
     updated_at: str
+    cost_centre: str = ''
     actual_check_in: str = None
     actual_check_out: str = None
 

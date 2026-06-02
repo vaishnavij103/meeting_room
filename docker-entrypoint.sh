@@ -28,33 +28,78 @@ SQLiteUserRepo(db)
 print('  ✅ Database ready')
 "
 
-# Seed rooms if empty
-echo "🏢 Checking rooms..."
+# Seed data (rooms, admin, admin contacts)
+echo "🌱 Seeding data..."
 python -c "
-import sys, os
+import sys, os, subprocess, time, requests
 sys.path.insert(0, '/app/room-booking-api')
 os.environ['DB_PATH'] = '/data/bookings.db'
-from db.sqlite_adapter import SQLiteRoomRepo
-repo = SQLiteRoomRepo('/data/bookings.db')
-rooms = repo.list()
-if len(rooms) == 0:
-    print('  Seeding rooms...')
-    import subprocess, time, requests
-    proc = subprocess.Popen(
-        ['python', '-m', 'uvicorn', 'fastapi_app.main:app', '--host', '0.0.0.0', '--port', '8000'],
-        cwd='/app/room-booking-api',
-        env={**os.environ, 'DB_PATH': '/data/bookings.db', 'PYTHONPATH': '/app/room-booking-api'},
-    )
-    time.sleep(3)
-    try:
+from db.sqlite_adapter import SQLiteRoomRepo, SQLiteUserRepo, SQLiteBookingRepo
+
+db_path = '/data/bookings.db'
+force_seed = '$FORCE_SEED'.lower() == 'true'
+
+# Start API server
+print('  Starting API server for seeding...')
+proc = subprocess.Popen(
+    ['python', '-m', 'uvicorn', 'fastapi_app.main:app', '--host', '0.0.0.0', '--port', '8000'],
+    cwd='/app/room-booking-api',
+    env={**os.environ, 'DB_PATH': db_path, 'PYTHONPATH': '/app/room-booking-api'},
+    stdout=subprocess.DEVNULL,
+    stderr=subprocess.DEVNULL,
+)
+time.sleep(3)
+
+try:
+    # Check if API is ready
+    for attempt in range(10):
+        try:
+            resp = requests.get('http://localhost:8000/api/health', timeout=2)
+            if resp.status_code == 200:
+                print('  ✅ API server ready')
+                break
+        except:
+            pass
+        if attempt < 9:
+            time.sleep(1)
+    
+    # 1. Seed rooms
+    rooms_repo = SQLiteRoomRepo(db_path)
+    rooms = rooms_repo.list()
+    if force_seed or len(rooms) == 0:
+        print('  📍 Seeding rooms...')
         exec(open('/app/seed_rooms.py').read())
+    else:
+        print(f'  ✅ {len(rooms)} rooms already exist')
+    
+    # 2. Seed admin user
+    users_repo = SQLiteUserRepo(db_path)
+    users = users_repo.list()
+    admin_exists = any(u.email == 'admin@apexon.com' for u in users)
+    if force_seed or not admin_exists:
+        print('  👤 Seeding admin user...')
         exec(open('/app/seed_admin.py').read())
+    else:
+        print('  ✅ Admin user already exists')
+    
+    # 3. Seed admin contacts
+    try:
+        print('  👨‍💼 Seeding admin contacts...')
+        exec(open('/app/seed_admin_contacts.py').read())
     except Exception as e:
-        print(f'  ⚠️ Seed error: {e}')
+        print(f'  ⚠️  Admin contacts seed error: {e}')
+    
+except Exception as e:
+    print(f'  ❌ Seeding error: {e}')
+    import traceback
+    traceback.print_exc()
+finally:
+    print('  Stopping API server...')
     proc.terminate()
-    proc.wait()
-else:
-    print(f'  ✅ {len(rooms)} rooms already exist')
+    try:
+        proc.wait(timeout=5)
+    except subprocess.TimeoutExpired:
+        proc.kill()
 "
 
 echo ""

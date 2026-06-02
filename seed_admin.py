@@ -2,7 +2,7 @@
 import os
 import requests
 
-BASE_URL = os.environ.get("API_BASE_URL", "http://localhost:8000")
+BASE_URL = os.environ.get("API_BASE_URL","http://localhost:8000/api")
 
 ADMIN = {
     "name": "Admin",

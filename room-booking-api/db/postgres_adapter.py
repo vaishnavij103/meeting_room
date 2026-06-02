@@ -23,6 +23,7 @@ CREATE TABLE IF NOT EXISTS location_wise_rooms (
     cabin_type TEXT,
     capacity INTEGER NOT NULL DEFAULT 0,
     amenities JSONB NOT NULL DEFAULT '[]'::jsonb,
+    allowed_users JSONB NOT NULL DEFAULT '[]'::jsonb,
     vc_enabled BOOLEAN NOT NULL DEFAULT FALSE,
     power_points INTEGER NOT NULL DEFAULT 0,
     status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active','inactive')),
@@ -64,6 +65,7 @@ CREATE TABLE IF NOT EXISTS bookings (
     status TEXT NOT NULL DEFAULT 'confirmed' CHECK (status IN ('confirmed','cancelled')),
     attendees JSONB NOT NULL DEFAULT '[]'::jsonb,
     notes TEXT NOT NULL DEFAULT '',
+    cost_centre TEXT NOT NULL DEFAULT '',
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL,
     actual_check_in TEXT,
@@ -84,6 +86,19 @@ def _ensure_schema(database_url: str) -> None:
     with _connect(database_url) as conn:
         with conn.cursor() as cur:
             cur.execute(_DDL)
+
+
+def _run_migrations(database_url: str) -> None:
+    with _connect(database_url) as conn:
+        with conn.cursor() as cur:
+            try:
+                cur.execute("ALTER TABLE bookings ADD COLUMN cost_centre TEXT NOT NULL DEFAULT ''")
+            except Exception:
+                pass
+            try:
+                cur.execute("ALTER TABLE location_wise_rooms ADD COLUMN allowed_users JSONB NOT NULL DEFAULT '[]'::jsonb")
+            except Exception:
+                pass
 
 
 def _ensure_json(value):
@@ -107,6 +122,7 @@ def _row_to_room(row) -> LocationWiseRoom:
         cabin_type=row["cabin_type"],
         capacity=row["capacity"],
         amenities=_ensure_json(row["amenities"]),
+        allowed_users=_ensure_json(row.get("allowed_users")),
         vc_enabled=bool(row["vc_enabled"]),
         power_points=row["power_points"],
         status=row["status"],
@@ -127,6 +143,7 @@ def _row_to_booking(row) -> Booking:
         status=row["status"],
         attendees=_ensure_json(row["attendees"]),
         notes=row["notes"],
+        cost_centre=row.get("cost_centre", ""),
         created_at=row["created_at"],
         updated_at=row["updated_at"],
         actual_check_in=row.get("actual_check_in"),
@@ -197,7 +214,7 @@ class PostgresRoomRepo(RoomRepository):
                     """
                     INSERT INTO location_wise_rooms (
                         room_id, name, location, floor, capacity, amenities, status,
-                        building, room_type, cabin_type, vc_enabled, power_points,
+                        building, room_type, cabin_type, allowed_users, vc_enabled, power_points,
                         created_at, updated_at
                     ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                     """,
@@ -212,6 +229,7 @@ class PostgresRoomRepo(RoomRepository):
                         room.building,
                         room.room_type,
                         room.cabin_type,
+                        json.dumps(room.allowed_users or []),
                         room.vc_enabled,
                         room.power_points,
                         room.created_at,
@@ -235,6 +253,7 @@ class PostgresRoomRepo(RoomRepository):
                         building=%s,
                         room_type=%s,
                         cabin_type=%s,
+                        allowed_users=%s,
                         vc_enabled=%s,
                         power_points=%s,
                         updated_at=%s
@@ -250,6 +269,7 @@ class PostgresRoomRepo(RoomRepository):
                         room.building,
                         room.room_type,
                         room.cabin_type,
+                        json.dumps(room.allowed_users or []),
                         room.vc_enabled,
                         room.power_points,
                         room.updated_at,
@@ -268,6 +288,7 @@ class PostgresBookingRepo(BookingRepository):
     def __init__(self, database_url: str):
         self._database_url = database_url
         _ensure_schema(database_url)
+        _run_migrations(database_url)
 
     def get(self, booking_id: str) -> Optional[Booking]:
         with _connect(self._database_url) as conn:
@@ -298,7 +319,7 @@ class PostgresBookingRepo(BookingRepository):
         with _connect(self._database_url) as conn:
             with conn.cursor() as cur:
                 cur.execute(
-                    "INSERT INTO bookings (booking_id, room_id, user_id, title, start_time, end_time, status, attendees, notes, created_at, updated_at, actual_check_in, actual_check_out) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
+                    "INSERT INTO bookings (booking_id, room_id, user_id, title, start_time, end_time, status, attendees, notes, cost_centre, created_at, updated_at, actual_check_in, actual_check_out) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
                     (
                         booking.booking_id,
                         booking.room_id,
@@ -309,6 +330,7 @@ class PostgresBookingRepo(BookingRepository):
                         booking.status,
                         json.dumps(booking.attendees or []),
                         booking.notes,
+                        booking.cost_centre,
                         booking.created_at,
                         booking.updated_at,
                         booking.actual_check_in,
@@ -321,7 +343,7 @@ class PostgresBookingRepo(BookingRepository):
         with _connect(self._database_url) as conn:
             with conn.cursor() as cur:
                 cur.execute(
-                    "UPDATE bookings SET room_id=%s, user_id=%s, title=%s, start_time=%s, end_time=%s, status=%s, attendees=%s, notes=%s, updated_at=%s, actual_check_in=%s, actual_check_out=%s WHERE booking_id=%s",
+                    "UPDATE bookings SET room_id=%s, user_id=%s, title=%s, start_time=%s, end_time=%s, status=%s, attendees=%s, notes=%s, cost_centre=%s, updated_at=%s, actual_check_in=%s, actual_check_out=%s WHERE booking_id=%s",
                     (
                         booking.room_id,
                         booking.user_id,
@@ -331,6 +353,7 @@ class PostgresBookingRepo(BookingRepository):
                         booking.status,
                         json.dumps(booking.attendees or []),
                         booking.notes,
+                        booking.cost_centre,
                         booking.updated_at,
                         booking.actual_check_in,
                         booking.actual_check_out,

@@ -65,6 +65,7 @@ def create_room(repo: RoomRepository, data: dict) -> LocationWiseRoom:
         cabin_type=data.get("cabin_type"),
         vc_enabled=data.get("vc_enabled", False),
         power_points=data.get("power_points", False),
+        allowed_users=data.get("allowed_users", []),
         created_at=now,
         updated_at=now,
     )
@@ -89,6 +90,8 @@ def update_room(repo: RoomRepository, room_id: str, data: dict) -> LocationWiseR
         room.amenities = data["amenities"]
     if "status" in data:
         room.status = data["status"]
+    if "allowed_users" in data:
+        room.allowed_users = data["allowed_users"]
 
     room.updated_at = datetime.utcnow().isoformat()
     return repo.update(room)

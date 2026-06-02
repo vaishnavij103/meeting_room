@@ -1,7 +1,7 @@
 import { Badge, Pill, amenityIcon } from './ui';
 import { useTheme } from '../ThemeContext';
 
-export default function RoomCard({ room, selected, onSelect, actions }) {
+export default function RoomCard({ room, selected, onSelect, actions, canBook = true }) {
   const { theme } = useTheme();
   const { name, capacity, floor, status, amenities = [] } = room;
   const capPct = Math.min((capacity / 50) * 100, 100);
@@ -10,15 +10,14 @@ export default function RoomCard({ room, selected, onSelect, actions }) {
     <div className={`relative ${theme === 'dark'
       ? 'bg-gradient-to-br from-[#0f1420] to-[#161c2e]'
       : 'bg-gradient-to-br from-gray-50 to-gray-100'
-    } rounded-2xl p-5 transition-all duration-300 overflow-hidden border ${
-      selected
+      } rounded-2xl p-5 transition-all duration-300 overflow-hidden border ${selected
         ? theme === 'dark'
           ? 'border-indigo-500 shadow-[0_0_24px_rgba(99,102,241,0.2)]'
           : 'border-indigo-500 shadow-[0_0_24px_rgba(99,102,241,0.15)]'
         : theme === 'dark'
           ? 'border-[#1e2a45] hover:border-[#2d3f6b] hover:-translate-y-1 hover:shadow-[0_20px_60px_rgba(0,0,0,0.5)]'
           : 'border-gray-200 hover:border-gray-300 hover:-translate-y-1 hover:shadow-lg'
-    }`}>
+      }`}>
       {/* Header */}
       <div className="flex justify-between items-start mb-3">
         <div className="flex-1 min-w-0">
@@ -56,16 +55,18 @@ export default function RoomCard({ room, selected, onSelect, actions }) {
         <div className="flex gap-2 mt-4">
           {onSelect && (
             <button
-              onClick={() => onSelect(room)}
-              className={`flex-1 py-2 rounded-xl text-sm font-semibold transition-all ${
-                selected
+              onClick={() => canBook && onSelect(room)}
+              disabled={!canBook}
+              className={`flex-1 py-2 rounded-xl text-sm font-semibold transition-all ${selected
                   ? 'bg-gradient-to-r from-indigo-500 to-purple-500 text-white'
-                  : theme === 'dark'
-                    ? 'border border-[#1e2a45] text-slate-400 hover:border-indigo-500 hover:text-indigo-300 hover:bg-indigo-500/5'
-                    : 'border border-gray-300 text-slate-600 hover:border-indigo-500 hover:text-indigo-600 hover:bg-indigo-50'
-              }`}
+                  : !canBook
+                    ? 'bg-gray-100 text-slate-400 border border-gray-200 cursor-not-allowed'
+                    : theme === 'dark'
+                      ? 'border border-[#1e2a45] text-slate-400 hover:border-indigo-500 hover:text-indigo-300 hover:bg-indigo-500/5'
+                      : 'border border-gray-300 text-slate-600 hover:border-indigo-500 hover:text-indigo-600 hover:bg-indigo-50'
+                }`}
             >
-              {selected ? '✅ Selected' : '📅 Book'}
+              {selected ? '✅ Selected' : canBook ? '📅 Book' : '🔒 Restricted'}
             </button>
           )}
           {actions}

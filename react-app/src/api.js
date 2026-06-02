@@ -30,6 +30,7 @@ async function request(method, path, body = null, params = null) {
 // Auth
 export const login = (email, password) => request('POST', '/auth/login', { email, password });
 export const register = (payload) => request('POST', '/auth/register', payload);
+export const resetPassword = (email, password) => request('POST', '/auth/reset', { email, password });
 
 // Health & Stats
 export const healthCheck = () => request('GET', '/health').catch(() => ({ status: 'error' }));

@@ -108,6 +108,12 @@ def create_app(
         user = users_core.login_user(user_repo, email, password)
         return _user_safe(user)
 
+    @app.post("/auth/reset")
+    async def reset_password(request: Request):
+        data = await request.json()
+        user = users_core.reset_password(user_repo, data)
+        return _user_safe(user)
+
 
     # ── Rooms ─────────────────────────────────────────────────────────────
     @app.get("/rooms")

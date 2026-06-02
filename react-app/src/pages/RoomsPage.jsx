@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback ,useMemo} from 'react';
-import { getRooms, createRoom, updateRoom, deactivateRoom, getRoomAvailability , importRoomsFromCSV } from '../api';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { getRooms, createRoom, updateRoom, deactivateRoom, getRoomAvailability, getUsers, importRoomsFromCSV } from '../api';
 import { useTheme } from '../ThemeContext';
 import { PageHeader, SectionHeader, EmptyState, Input, Select, Button } from '../components/ui';
 import RoomCard from '../components/RoomCard';
@@ -48,10 +48,10 @@ function RoomImportForm({ onSuccess, onCancel }) {
       <div className={`p-5 rounded-2xl ${theme === 'dark'
         ? 'bg-gradient-to-br from-[#0f1420] to-[#161c2e] border-[#1e2a45]'
         : 'bg-gradient-to-br from-gray-50 to-gray-100 border-gray-200'
-      } border mb-4 relative`}>
+        } border mb-4 relative`}>
         <div className="absolute top-0 left-6 right-6 h-px bg-gradient-to-r from-transparent via-green-500 to-transparent" />
         <h3 className={`text-base font-bold ${theme === 'dark' ? 'text-slate-100' : 'text-slate-900'} mb-4`}>✅ Import Complete</h3>
-        
+
         <div className="space-y-3 mb-4">
           <div className={`px-4 py-2 rounded-xl text-sm ${theme === 'dark' ? 'bg-green-500/8 border-green-500/20 text-green-400 border' : 'bg-green-100 border-green-300 text-green-700 border'}`}>
             ✓ <span className="font-semibold">{results.created}</span> rooms created
@@ -95,7 +95,7 @@ function RoomImportForm({ onSuccess, onCancel }) {
         <button onClick={() => onCancel?.()} className={`w-full px-4 py-2 rounded-xl font-semibold transition-all ${theme === 'dark'
           ? 'bg-indigo-600 hover:bg-indigo-700 text-white'
           : 'bg-indigo-600 hover:bg-indigo-700 text-white'
-        }`}>
+          }`}>
           Close
         </button>
       </div>
@@ -106,13 +106,13 @@ function RoomImportForm({ onSuccess, onCancel }) {
     <div className={`p-5 rounded-2xl ${theme === 'dark'
       ? 'bg-gradient-to-br from-[#0f1420] to-[#161c2e] border-[#1e2a45]'
       : 'bg-gradient-to-br from-gray-50 to-gray-100 border-gray-200'
-    } border mb-4 relative`}>
+      } border mb-4 relative`}>
       <div className="absolute top-0 left-6 right-6 h-px bg-gradient-to-r from-transparent via-indigo-500 to-transparent" />
       <h3 className={`text-base font-bold ${theme === 'dark' ? 'text-slate-100' : 'text-slate-900'} mb-4`}>📊 Import Rooms from CSV</h3>
       {error && <div className={`mb-3 px-4 py-2 rounded-xl ${theme === 'dark'
         ? 'bg-rose-500/8 border-rose-500/20 text-rose-400'
         : 'bg-rose-100 border-rose-300 text-rose-700'
-      } border text-sm`}>❌ {error}</div>}
+        } border text-sm`}>❌ {error}</div>}
       <form onSubmit={handleSubmit}>
         <div className="mb-4">
           <label className={`block text-sm font-medium mb-2 ${theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
@@ -122,7 +122,7 @@ function RoomImportForm({ onSuccess, onCancel }) {
             className={`w-full px-4 py-2 rounded-xl text-sm border focus:outline-none transition-all ${theme === 'dark'
               ? 'bg-[#0a0f1e] border-[#1e2a45] text-slate-100 file:text-slate-400'
               : 'bg-white border-gray-300 text-slate-900 file:text-slate-600'
-            } ${file ? (theme === 'dark' ? 'border-green-500/30' : 'border-green-300') : ''}`} />
+              } ${file ? (theme === 'dark' ? 'border-green-500/30' : 'border-green-300') : ''}`} />
           {file && <div className={`mt-1 text-xs ${theme === 'dark' ? 'text-green-400' : 'text-green-600'}`}>
             ✓ {file.name}
           </div>}
@@ -149,27 +149,43 @@ function RoomForm({ existing, onSave, onCancel }) {
   const [floor, setFloor] = useState(existing?.floor || 1);
   const [status, setStatus] = useState(existing?.status || 'active');
   const [amenities, setAmenities] = useState(existing?.amenities || []);
+  const [allowedUsers, setAllowedUsers] = useState(existing?.allowed_users || []);
+  const [userOptions, setUserOptions] = useState([]);
   const [error, setError] = useState('');
 
+  useEffect(() => {
+    getUsers().then(setUserOptions).catch(() => setUserOptions([]));
+  }, []);
+
+  useEffect(() => {
+    setName(existing?.name || '');
+    setCapacity(existing?.capacity || 10);
+    setFloor(existing?.floor || 1);
+    setStatus(existing?.status || 'active');
+    setAmenities(existing?.amenities || []);
+    setAllowedUsers(existing?.allowed_users || []);
+  }, [existing]);
+
   const toggle = (a) => setAmenities(prev => prev.includes(a) ? prev.filter(x => x !== a) : [...prev, a]);
+  const toggleAllowedUser = (userId) => setAllowedUsers(prev => prev.includes(userId) ? prev.filter(x => x !== userId) : [...prev, userId]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!name.trim()) { setError('Room name is required.'); return; }
-    onSave({ name: name.trim(), capacity: Number(capacity), floor: Number(floor), amenities, status });
+    onSave({ name: name.trim(), capacity: Number(capacity), floor: Number(floor), amenities, status, allowed_users: allowedUsers });
   };
 
   return (
     <div className={`p-5 rounded-2xl ${theme === 'dark'
       ? 'bg-gradient-to-br from-[#0f1420] to-[#161c2e] border-[#1e2a45]'
       : 'bg-gradient-to-br from-gray-50 to-gray-100 border-gray-200'
-    } border mb-4 relative`}>
+      } border mb-4 relative`}>
       <div className="absolute top-0 left-6 right-6 h-px bg-gradient-to-r from-transparent via-indigo-500 to-transparent" />
       <h3 className={`text-base font-bold ${theme === 'dark' ? 'text-slate-100' : 'text-slate-900'} mb-4`}>{existing ? '✏️ Edit Room' : '🏢 New Room'}</h3>
       {error && <div className={`mb-3 px-4 py-2 rounded-xl ${theme === 'dark'
         ? 'bg-rose-500/8 border-rose-500/20 text-rose-400'
         : 'bg-rose-100 border-rose-300 text-rose-700'
-      } border text-sm`}>❌ {error}</div>}
+        } border text-sm`}>❌ {error}</div>}
       <form onSubmit={handleSubmit}>
         <div className="grid grid-cols-2 gap-3 mb-3">
           <Input label="Room Name" value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Horizon Suite" />
@@ -183,19 +199,47 @@ function RoomForm({ existing, onSave, onCancel }) {
           )}
         </div>
         <div className="mb-4">
+          <label className={`block text-xs font-semibold ${theme === 'dark' ? 'text-slate-500' : 'text-slate-600'} uppercase tracking-wider mb-2`}>Allowed Users</label>
+          <div className={`p-4 rounded-2xl border ${theme === 'dark' ? 'border-[#1e2a45] bg-[#0a0f1e]' : 'border-gray-200 bg-white'}`}>
+            <div className={`text-xs ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'} mb-3`}>
+              Leave empty to allow all users. Select specific employees to restrict booking to only those users.
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-56 overflow-y-auto">
+              {userOptions.map((user) => (
+                <button
+                  key={user.user_id}
+                  type="button"
+                  onClick={() => toggleAllowedUser(user.user_id)}
+                  className={`text-left px-3 py-2 rounded-2xl border w-full transition-all ${allowedUsers.includes(user.user_id)
+                    ? theme === 'dark'
+                      ? 'bg-indigo-500/15 border-indigo-500 text-indigo-100'
+                      : 'bg-indigo-100 border-indigo-300 text-indigo-800'
+                    : theme === 'dark'
+                      ? 'bg-[#0f1420] border-[#1e2a45] text-slate-300 hover:border-indigo-500/30 hover:text-indigo-300'
+                      : 'bg-white border-gray-200 text-slate-600 hover:border-indigo-500/30 hover:text-indigo-700'
+                    }`}>
+                  <div className="flex items-center justify-between gap-2 text-xs">
+                    <span>{user.name}</span>
+                    <span className="font-semibold">{user.user_id}</span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+        <div className="mb-4">
           <label className={`block text-xs font-semibold ${theme === 'dark' ? 'text-slate-500' : 'text-slate-600'} uppercase tracking-wider mb-2`}>Amenities</label>
           <div className="flex flex-wrap gap-2">
             {AMENITIES.map(a => (
               <button key={a} type="button" onClick={() => toggle(a)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                  amenities.includes(a)
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${amenities.includes(a)
                     ? theme === 'dark'
                       ? 'bg-indigo-500/15 border-indigo-500/30 text-indigo-300'
                       : 'bg-indigo-100 border-indigo-300 text-indigo-700'
                     : theme === 'dark'
                       ? 'bg-[#0a0f1e] border-[#1e2a45] text-slate-500 hover:border-indigo-500/30 hover:text-indigo-400'
                       : 'bg-white border-gray-300 text-slate-600 hover:border-indigo-500 hover:text-indigo-600'
-                } border`}>
+                  } border`}>
                 {a}
               </button>
             ))}
@@ -231,6 +275,16 @@ export default function RoomsPage() {
   }, []);
 
   useEffect(reload, [reload]);
+  const formRef = useRef(null);
+
+  // Auto-scroll to form when create or edit form is shown
+  useEffect(() => {
+    if (showForm || editRoom) {
+      setTimeout(() => {
+        formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 80);
+    }
+  }, [showForm, editRoom]);
 
   const cityRooms = useMemo(() => {
     return rooms.filter(r => r.location === location);
@@ -293,10 +347,17 @@ export default function RoomsPage() {
       {error && <div className={`mb-4 px-4 py-2 rounded-xl ${theme === 'dark'
         ? 'bg-rose-500/8 border-rose-500/20 text-rose-400'
         : 'bg-rose-100 border-rose-300 text-rose-700'
-      } border text-sm`}>❌ {error}</div>}
+        } border text-sm`}>❌ {error}</div>}
 
-      {showForm && <RoomForm onSave={handleCreate} onCancel={() => setShowForm(false)} />}
-      {editRoom && <RoomForm existing={editRoom} onSave={handleUpdate} onCancel={() => setEditRoom(null)} />}
+      {(showForm || editRoom) && (
+        <div ref={formRef}>
+          <RoomForm
+            existing={editRoom}
+            onSave={editRoom ? handleUpdate : handleCreate}
+            onCancel={() => { if (editRoom) setEditRoom(null); else setShowForm(false); }}
+          />
+        </div>
+      )}
       {showImport && <RoomImportForm onSuccess={() => { setShowImport(false); reload(); }} onCancel={() => setShowImport(false)} />}
 
 
@@ -304,8 +365,8 @@ export default function RoomsPage() {
       <div className={`flex gap-6 mb-5 px-4 py-3 ${theme === 'dark'
         ? 'bg-[#0f1420] border-[#1e2a45]'
         : 'bg-gray-50 border-gray-200'
-      } border rounded-xl`}>
-        <span className={`text-xs ${theme === 'dark' ? 'text-slate-500' : 'text-slate-600'}`}><span className={theme === 'dark' ? 'text-slate-100' : 'text-slate-900'} style={{fontWeight: 'bold'}}>{cityRooms.length}</span> rooms</span>
+        } border rounded-xl`}>
+        <span className={`text-xs ${theme === 'dark' ? 'text-slate-500' : 'text-slate-600'}`}><span className={theme === 'dark' ? 'text-slate-100' : 'text-slate-900'} style={{ fontWeight: 'bold' }}>{cityRooms.length}</span> rooms</span>
         <span className={`text-xs ${theme === 'dark' ? 'text-slate-500' : 'text-slate-600'}`}><span className="text-emerald-400 font-bold">{activeRooms.length}</span> active</span>
         <span className={`text-xs ${theme === 'dark' ? 'text-slate-500' : 'text-slate-600'}`}><span className="text-rose-400 font-bold">{cityRooms.length - activeRooms.length}</span> inactive</span>
         <span className={`text-xs ${theme === 'dark' ? 'text-slate-500' : 'text-slate-600'}`}><span className="text-indigo-400 font-bold">{cityRooms.reduce((s, r) => s + r.capacity, 0)}</span> total seats</span>
@@ -321,7 +382,7 @@ export default function RoomsPage() {
                   className={`flex-1 py-2 rounded-xl text-xs font-semibold border transition-all ${theme === 'dark'
                     ? 'border-[#1e2a45] text-slate-400 hover:border-indigo-500 hover:text-indigo-300'
                     : 'border-gray-300 text-slate-600 hover:border-indigo-500 hover:text-indigo-600'
-                  }`}>
+                    }`}>
                   ✏️ Edit
                 </button>
                 {room.status === 'active' && (
@@ -329,7 +390,7 @@ export default function RoomsPage() {
                     className={`flex-1 py-2 rounded-xl text-xs font-semibold border transition-all ${theme === 'dark'
                       ? 'border-rose-500/20 text-rose-400 hover:bg-rose-500/10'
                       : 'border-rose-300 text-rose-700 hover:bg-rose-100'
-                    }`}>
+                      }`}>
                     🗑️ Deactivate
                   </button>
                 )}
@@ -349,7 +410,7 @@ export default function RoomsPage() {
           className={`px-4 py-2.5 rounded-xl ${theme === 'dark'
             ? 'bg-[#0a0f1e] border-[#1e2a45] text-slate-100 focus:border-indigo-500'
             : 'bg-white border-gray-300 text-slate-900 focus:border-indigo-500'
-          } border text-sm outline-none`}>
+            } border text-sm outline-none`}>
           <option value="">Select room...</option>
           {activeRooms.map(r => <option key={r.room_id} value={r.room_id}>{r.name}</option>)}
         </select>
@@ -357,7 +418,7 @@ export default function RoomsPage() {
           className={`px-4 py-2.5 rounded-xl ${theme === 'dark'
             ? 'bg-[#0a0f1e] border-[#1e2a45] text-slate-100 focus:border-indigo-500'
             : 'bg-white border-gray-300 text-slate-900 focus:border-indigo-500'
-          } border text-sm outline-none`} />
+            } border text-sm outline-none`} />
       </div>
 
       {availData && (
@@ -371,7 +432,7 @@ export default function RoomsPage() {
                 <div className={`flex items-center gap-4 mb-4 px-4 py-3 ${theme === 'dark'
                   ? 'bg-[#0f1420] border-[#1e2a45]'
                   : 'bg-gray-50 border-gray-200'
-                } border rounded-xl`}>
+                  } border rounded-xl`}>
                   <div className="flex-1">
                     <div className={`text-xs ${theme === 'dark' ? 'text-slate-500' : 'text-slate-600'} mb-1`}>Availability — {free} of {slots.length} slots free</div>
                     <div className={`h-1.5 ${theme === 'dark' ? 'bg-[#1e2a45]' : 'bg-gray-300'} rounded-full overflow-hidden`}>
@@ -387,15 +448,14 @@ export default function RoomsPage() {
                   {slots.map((s, i) => {
                     const t = s.start_time?.slice(11, 16);
                     return (
-                      <div key={i} className={`py-2 rounded-xl text-center text-xs font-bold transition-all border ${
-                        s.is_available
+                      <div key={i} className={`py-2 rounded-xl text-center text-xs font-bold transition-all border ${s.is_available
                           ? theme === 'dark'
                             ? 'bg-emerald-500/8 border-emerald-500/25 text-emerald-400'
                             : 'bg-emerald-100 border-emerald-300 text-emerald-700'
                           : theme === 'dark'
                             ? 'bg-rose-500/8 border-rose-500/20 text-rose-400'
                             : 'bg-rose-100 border-rose-300 text-rose-700'
-                      }`}>
+                        }`}>
                         <div>{t}</div>
                         <div className="text-[0.6rem] opacity-70 mt-0.5">{s.is_available ? 'Available' : (s.booking_title || 'Booked').slice(0, 10)}</div>
                       </div>

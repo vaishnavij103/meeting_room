@@ -28,6 +28,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY room-booking-api/ ./room-booking-api/
 COPY run_api.py ./
 COPY seed_admin.py ./
+COPY seed_admin_contacts.py ./
 COPY seed_rooms.py ./
 COPY location_wise_rooms_cleaned.csv ./   
 
