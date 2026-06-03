@@ -5,7 +5,7 @@ import csv
 import json
 
 
-BASE_URL = os.environ.get("API_BASE_URL", "http://localhost:8000/api")
+BASE_URL = os.environ.get("API_BASE_URL", "https://meeting-room-6ssp.onrender.com/api")
 
 # Rules:
 # - No floor field (all same floor)
@@ -47,15 +47,18 @@ def load_rooms_from_csv(file_path):
                 room = {
                     "name": clean(row.get("Room Name")),
                     "location": clean(row.get("Location / Building")) or "Default",
+                    "building": clean(row.get("Building")) if clean(row.get("Building")) else None,
                     "floor": int(clean(row.get("Floor")) or 1),
-                    "capacity": capacity,
-                    "amenities": amenities,
-                    "status": "active",
-
                     "room_type": clean(row.get("Room Type")),
                     "cabin_type": clean(row.get("Cabin Type")),
+                    "capacity": capacity,
+                    "amenities": amenities,
                     "vc_enabled": yes_no(row.get("VC Enabled")),
                     "power_points": yes_no(row.get("Power Points")),
+                    "status": "active",
+                    "allowed_users": [],
+                    
+       
                 }
 
                 rooms.append(room)
@@ -73,12 +76,19 @@ def main():
     print("\n🏢 Apexon Room Booking — Room Seeder")
     print("=" * 40)
     print(f"Connecting to {BASE_URL}...")
-    try:
-        r = requests.get(f"{BASE_URL}/health", timeout=5)
-        r.raise_for_status()
-        print("✅ API is up\n")
-    except Exception as e:
-        print(f"❌ Cannot reach API: {e}")
+    def api_is_up():
+        for p in ("/health", "/api/health"):
+            try:
+                r = requests.get(f"{BASE_URL}{p}", timeout=5)
+                r.raise_for_status()
+                print(f"✅ API is up on {BASE_URL}{p}\n")
+                return True
+            except Exception:
+                pass
+        return False
+
+    if not api_is_up():
+        print(f"❌ Cannot reach API at {BASE_URL} (tried /health and /api/health)")
         print("   Make sure to run: python run_api.py")
         return
 

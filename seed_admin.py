@@ -2,7 +2,7 @@
 import os
 import requests
 
-BASE_URL = os.environ.get("API_BASE_URL","http://localhost:8000/api")
+BASE_URL = os.environ.get("API_BASE_URL","https://meeting-room-6ssp.onrender.com/api")
 
 ADMIN = {
     "name": "Admin",
@@ -16,12 +16,19 @@ ADMIN = {
 def main():
     print("\n🛡️  Apexon Room Booking — Admin Seeder")
     print("=" * 40)
-    try:
-        r = requests.get(f"{BASE_URL}/health", timeout=5)
-        r.raise_for_status()
-        print("✅ API is up\n")
-    except Exception as e:
-        print(f"❌ Cannot reach API: {e}")
+    def api_is_up():
+        for p in ("/health", "/api/health"):
+            try:
+                r = requests.get(f"{BASE_URL}{p}", timeout=5)
+                r.raise_for_status()
+                print(f"✅ API is up on {BASE_URL}{p}\n")
+                return True
+            except Exception:
+                pass
+        return False
+
+    if not api_is_up():
+        print(f"❌ Cannot reach API at {BASE_URL} (tried /health and /api/health)")
         print("   Run: python run_api.py")
         return
 

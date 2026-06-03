@@ -51,15 +51,20 @@ proc = subprocess.Popen(
 time.sleep(3)
 
 try:
-    # Check if API is ready
+    # Check if API is ready (try both /health and /api/health)
     for attempt in range(10):
-        try:
-            resp = requests.get('http://localhost:8000/api/health', timeout=2)
-            if resp.status_code == 200:
-                print('  ✅ API server ready')
-                break
-        except:
-            pass
+        ok = False
+        for base in ('http://localhost:8000/health', 'http://localhost:8000/api/health'):
+            try:
+                resp = requests.get(base, timeout=2)
+                if resp.status_code == 200:
+                    print('  ✅ API server ready')
+                    ok = True
+                    break
+            except:
+                pass
+        if ok:
+            break
         if attempt < 9:
             time.sleep(1)
     
