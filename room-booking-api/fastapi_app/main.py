@@ -2,7 +2,15 @@ from __future__ import annotations
 
 import dataclasses
 import logging
+import os
+import sys
 from typing import Optional
+
+# When running this module directly, make the package root importable.
+if __package__ is None:
+    package_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    if package_root not in sys.path:
+        sys.path.insert(0, package_root)
 
 from fastapi import FastAPI, HTTPException, Query, Request, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware

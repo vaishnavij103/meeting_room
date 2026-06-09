@@ -1,15 +1,18 @@
 from __future__ import annotations
 
 import json
+import os
 import sqlite3
+import sys
 from typing import Optional
 
-try:
-    from ..core.models import Room, Booking, User , LocationWiseRoom
-    from .base import RoomRepository, BookingRepository, UserRepository
-except ImportError:
-    from core.models import Room, Booking, User ,LocationWiseRoom # type: ignore
-    from db.base import RoomRepository, BookingRepository, UserRepository  # type: ignore
+# Make the internal room-booking-api package importable from the repository root.
+package_root = os.path.join(os.path.dirname(os.path.abspath(__file__)), "room-booking-api")
+if package_root not in sys.path:
+    sys.path.insert(0, package_root)
+
+from core.models import Room, Booking, User, LocationWiseRoom  # type: ignore
+from db.base import RoomRepository, BookingRepository, UserRepository  # type: ignore
 
 _DDL = """
 CREATE TABLE IF NOT EXISTS rooms (
@@ -22,6 +25,7 @@ CREATE TABLE IF NOT EXISTS rooms (
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
 );
+
 
 CREATE TABLE IF NOT EXISTS location_wise_rooms (
     room_id TEXT PRIMARY KEY,
@@ -39,7 +43,6 @@ CREATE TABLE IF NOT EXISTS location_wise_rooms (
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
 );
-
 
 CREATE TABLE IF NOT EXISTS users (
     user_id       TEXT PRIMARY KEY,
@@ -98,6 +101,18 @@ def _run_migrations(db_path: str) -> None:
                 pass  # column already exists
 
 
+def _normalize_existing_locations(db_path: str) -> None:
+    with _connect(db_path) as conn:
+        conn.execute("UPDATE location_wise_rooms SET location=trim(location) WHERE location != trim(location)")
+        conn.execute(
+            "UPDATE location_wise_rooms SET location='Bangalore(Domlur)' WHERE lower(trim(location)) LIKE 'bangalore%domlur%'"
+        )
+        conn.execute(
+            "UPDATE location_wise_rooms SET location='Bangalore(Signet)' WHERE lower(trim(location)) LIKE 'bangalore%signet%'"
+        )
+        conn.commit()
+
+
 def _row_to_room(row: sqlite3.Row) -> LocationWiseRoom:
     return LocationWiseRoom(
         room_id=row["room_id"],
@@ -145,6 +160,7 @@ class SQLiteRoomRepo(RoomRepository):
     def _init_schema(self) -> None:
         with _connect(self._db_path) as conn:
             conn.executescript(_DDL)
+        _normalize_existing_locations(self._db_path)
 
     def get(self, room_id: str) -> Optional[LocationWiseRoom]:
         with _connect(self._db_path) as conn:
@@ -314,6 +330,7 @@ class SQLiteUserRepo(UserRepository):
     def _init_schema(self) -> None:
         with _connect(self._db_path) as conn:
             conn.executescript(_DDL)
+        _normalize_existing_locations(self._db_path)
 
     def get(self, user_id: str) -> Optional[User]:
         with _connect(self._db_path) as conn:

@@ -1,3 +1,4 @@
+import re
 import uuid
 import csv
 import io
@@ -43,6 +44,17 @@ def _validate_room_data(data: dict, require_name: bool = True) -> None:
         raise BookingError("invalid status", http_status=422)
 
 
+def _normalize_location(value: str) -> str:
+    if not value or not isinstance(value, str):
+        raise BookingError("location is required", http_status=422)
+
+    normalized = value.strip()
+    normalized = re.sub(r"\s+", " ", normalized)
+    normalized = re.sub(r"(?i)bangalore\s*[\(\[]?\s*domlur[\)\]]?", "Bangalore(Domlur)", normalized)
+    normalized = re.sub(r"(?i)bangalore\s*[\(\[]?\s*signet[\)\]]?", "Bangalore(Signet)", normalized)
+    return normalized
+
+
 def create_room(repo: RoomRepository, data: dict) -> LocationWiseRoom:
     _validate_room_data(data, require_name=True)
 
@@ -53,7 +65,7 @@ def create_room(repo: RoomRepository, data: dict) -> LocationWiseRoom:
     room = LocationWiseRoom(
         room_id=str(uuid.uuid4()),
         name=data["name"].strip(),
-        location=data.get("location"),  # ✅ REQUIRED
+        location=_normalize_location(data.get("location")),  # ✅ REQUIRED
         floor=data.get("floor", 1),
         capacity=data["capacity"],
         amenities=data.get("amenities", []),
@@ -82,6 +94,8 @@ def update_room(repo: RoomRepository, room_id: str, data: dict) -> LocationWiseR
 
     if "name" in data:
         room.name = data["name"].strip()
+    if "location" in data:
+        room.location = _normalize_location(data["location"])
     if "floor" in data:
         room.floor = data["floor"]
     if "capacity" in data:

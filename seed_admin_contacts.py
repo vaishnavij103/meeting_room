@@ -1,13 +1,16 @@
 """Seed script — creates default admin contacts for each location."""
 import os
 import requests
+from dotenv import load_dotenv
+load_dotenv()
 
+print(os.environ.get("API_BASE_URL"))
 BASE_URL = os.environ.get("API_BASE_URL", "https://meeting-room-6ssp.onrender.com/api")
 
 # Default admin contacts for each location
 ADMIN_CONTACTS = [
     {
-        "location": "Ahemdabad",
+        "location": "Ahmedabad",
         "name": "Kalpana Parmar",
         "email": "kalpana.parmar@apexon.com",
         "phone": "7698004492",
@@ -15,7 +18,7 @@ ADMIN_CONTACTS = [
         "active": True,
     },
     {
-        "location": "Ahemdabad",
+        "location": "Ahmedabad",
         "name": "Ayush Mathuria",
         "email": "ayush.mathuria@apexon.com",
         "phone": "9624010002",
@@ -47,7 +50,7 @@ ADMIN_CONTACTS = [
         "active": True,
     },
     {
-        "location": "Bangalore (Domlur office)",
+        "location": "Bangalore(Domlur)",
         "name": "Manjula Munikeshava",
         "email": "manjula.munikeshava@apexon.com",
         "phone": "6361476691",
@@ -55,7 +58,7 @@ ADMIN_CONTACTS = [
         "active": True,
     },
     {
-        "location": "Bangalore (Signet office)",
+        "location": "Bangalore(Signet)",
         "name": "Bhavya S",
         "email": "bhavya.s@apexon.com",
         "phone": "9972915522",

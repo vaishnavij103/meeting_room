@@ -52,7 +52,6 @@ CREATE TABLE IF NOT EXISTS users (
     created_at    TEXT NOT NULL
 );
 
-
 CREATE TABLE IF NOT EXISTS admin_contacts (
     admin_id    TEXT PRIMARY KEY,
     location    TEXT NOT NULL,
@@ -113,6 +112,18 @@ def _run_migrations(db_path: str) -> None:
                 conn.execute(sql)
             except sqlite3.OperationalError:
                 pass  # column already exists
+
+
+def _normalize_existing_locations(db_path: str) -> None:
+    with _connect(db_path) as conn:
+        conn.execute("UPDATE location_wise_rooms SET location=trim(location) WHERE location != trim(location)")
+        conn.execute(
+            "UPDATE location_wise_rooms SET location='Bangalore(Domlur)' WHERE lower(trim(location)) LIKE 'bangalore%domlur%'"
+        )
+        conn.execute(
+            "UPDATE location_wise_rooms SET location='Bangalore(Signet)' WHERE lower(trim(location)) LIKE 'bangalore%signet%'"
+        )
+        conn.commit()
 
 
 def _row_to_room(row: sqlite3.Row) -> LocationWiseRoom:
@@ -178,6 +189,7 @@ class SQLiteRoomRepo(RoomRepository):
     def _init_schema(self) -> None:
         with _connect(self._db_path) as conn:
             conn.executescript(_DDL)
+        _normalize_existing_locations(self._db_path)
 
     def get(self, room_id: str) -> Optional[LocationWiseRoom]:
         with _connect(self._db_path) as conn:
@@ -351,6 +363,7 @@ class SQLiteUserRepo(UserRepository):
     def _init_schema(self) -> None:
         with _connect(self._db_path) as conn:
             conn.executescript(_DDL)
+        _normalize_existing_locations(self._db_path)
 
     def get(self, user_id: str) -> Optional[User]:
         with _connect(self._db_path) as conn:

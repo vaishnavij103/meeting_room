@@ -3,7 +3,8 @@ import os
 import requests
 import csv
 import json
-
+from dotenv import load_dotenv
+load_dotenv()
 
 BASE_URL = os.environ.get("API_BASE_URL", "https://meeting-room-6ssp.onrender.com/api")
 

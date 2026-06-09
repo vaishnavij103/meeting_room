@@ -33,19 +33,19 @@ S.NO.,Room Name,Location / Building,Floor,Room Type,Cabin Type,Seating Capacity,
 32,NEW LANDS,Chennai,7,,Cabin,3,White board,No,Yes
 33,MCG,Chennai,7,,Cabin,3,White board,No,Yes
 34,Sharja,Chennai,7,,Cabin,3,White board,No,Yes
-35,Everest,Bangalore ( Signet ) ,3,Board Room ,Board Room ,14-Seater,Board - Pillar �,VC not enabled,4 Power points
-36,Sirius,Bangalore ( Signet ) ,3,VC room ,VC room ,8-Seater ,Board - Pillar,VC not enabled,3 Power Points
-37,Ben Nevis,Bangalore ( Signet ) ,3,VC room ,VC room ,10-Seater ,Samsung TV +Yealink Bar+ Yealink Wifi� Network device,VC not enabled,3 Power Points
-38,Arcturus,Bangalore ( Signet ) ,3,Discussion room ,Discussion room ,3-seater ,Board -Glass Wall ,Nil,1 power point 
-39,Vega,Bangalore ( Signet ) ,3,Discussion room ,Discussion room ,3-seater ,Board -Glass Wall ,Nil,1 power point 
-40,Rigel,Bangalore ( Signet ) ,3,Discussion room ,Discussion room ,3-seater ,Board -Glass Wall ,Nil,1 power point 
-41,Procyon,Bangalore ( Signet ) ,3,CEO - Cabin,Executive Cabin,3-Seater + Visitor Seats 2,Board -Glass Wall + Samsung TV ,VC not enabled,2 Power Points
-42,Adhara,Bangalore ( Signet ) ,3,CFO - Cabin,Executive Cabin,3-Seater + Visitor Seats 3,Board -Glass Wall + Samsung TV ,VC not enabled,2 Power Points
-43,Pollux,Bangalore ( Signet ) ,3,Manager - Cabin ,Manager - Cabin,3-Seater ,White Glass Board,Nil,1 power point 
-44,Castor,Bangalore ( Signet ) ,3,Manager - Cabin,Manager - Cabin,3-Seater ,White Glass Board,Nil,1 power point 
-45,Altair,Bangalore ( Signet ) ,3,Manager - Cabin,Manager - Cabin,3-Seater ,White Glass Board,Nil,1 power point 
-46,Capella,Bangalore ( Signet ) ,3,Manager - Cabin,Manager - Cabin,3-Seater ,White Glass Board,Nil,1 power point 
-47,Acrux,Bangalore ( Signet ) ,3,Manager - Cabin,Manager - Cabin,3-Seater ,White Glass Board,Nil,1 power point 
+35,Everest,Bangalore(Signet),3,Board Room ,Board Room ,14-Seater,Board - Pillar �,VC not enabled,4 Power points
+36,Sirius,Bangalore(Signet),3,VC room ,VC room ,8-Seater ,Board - Pillar,VC not enabled,3 Power Points
+37,Ben Nevis,Bangalore(Signet),3,VC room ,VC room ,10-Seater ,Samsung TV +Yealink Bar+ Yealink Wifi� Network device,VC not enabled,3 Power Points
+38,Arcturus,Bangalore(Signet),3,Discussion room ,Discussion room ,3-seater ,Board -Glass Wall ,Nil,1 power point 
+39,Vega,Bangalore(Signet),3,Discussion room ,Discussion room ,3-seater ,Board -Glass Wall ,Nil,1 power point 
+40,Rigel,Bangalore(Signet),3,Discussion room ,Discussion room ,3-seater ,Board -Glass Wall ,Nil,1 power point 
+41,Procyon,Bangalore(Signet),3,CEO - Cabin,Executive Cabin,3-Seater + Visitor Seats 2,Board -Glass Wall + Samsung TV ,VC not enabled,2 Power Points
+42,Adhara,Bangalore(Signet),3,CFO - Cabin,Executive Cabin,3-Seater + Visitor Seats 3,Board -Glass Wall + Samsung TV ,VC not enabled,2 Power Points
+43,Pollux,Bangalore(Signet),3,Manager - Cabin ,Manager - Cabin,3-Seater ,White Glass Board,Nil,1 power point 
+44,Castor,Bangalore(Signet),3,Manager - Cabin,Manager - Cabin,3-Seater ,White Glass Board,Nil,1 power point 
+45,Altair,Bangalore(Signet),3,Manager - Cabin,Manager - Cabin,3-Seater ,White Glass Board,Nil,1 power point 
+46,Capella,Bangalore(Signet),3,Manager - Cabin,Manager - Cabin,3-Seater ,White Glass Board,Nil,1 power point 
+47,Acrux,Bangalore(Signet),3,Manager - Cabin,Manager - Cabin,3-Seater ,White Glass Board,Nil,1 power point 
 48,Galieo,Mumbai,0,Conf,Meeting,4,TV/Hdmi Cable,No,Yes
 49,Newton,Mumbai,0,Conf,Meeting,4,TV/Hdmi Cable,No,Yes
 50,Curie,Mumbai,0,Conf,Meeting,3,TV/Hdmi Cable,No,Yes
@@ -92,23 +92,23 @@ S.NO.,Room Name,Location / Building,Floor,Room Type,Cabin Type,Seating Capacity,
 91,Room 05,Hyderabad,0,,Cabin,3,,,
 92,Room 06,Hyderabad,0,01 board room,,,,,
 93,Room 07,Hyderabad,0,1 discussion room,,,,,
-94,Kanchenjunga,Bangalore ( Domlur ),2,Board Room,,14,"Glass board - 1, TV -1",Yes,Wifi
-95,Cabot Cliffs,Bangalore ( Domlur ),2,Training Room,,18,"Glass board - 2, TV -1",No,Wifi
-96,Oakmont,Bangalore ( Domlur ),2,Discussion Room,,6,"Glass board - 1, TV -1",No,Wifi
-97,Eagleton,Bangalore ( Domlur ),2,Discussion Room,,4,Glass board - 1,No,Wifi
-98,Cypress Point,Bangalore ( Domlur ),2,Discussion Room,,4,Glass board - 1,No,Wifi
-99,Royal County Down,Bangalore ( Domlur ) ,2,Discussion Room,,4,Glass board - 1,No,Wifi
-100,Pine Valley,Bangalore ( Domlur ) ,2,Discussion Room,,6,TV-1,No,Wifi
-101,Sunningdale,Bangalore ( Domlur ) ,2,Discussion Room,,4,Glass board - 1,No,Wifi
-102,Royal Dornoch,Bangalore ( Domlur ) ,2,Discussion Room,,4,Glass board - 1,No,Wifi
-103,Muirfield,Bangalore ( Domlur ) ,2,Discussion Room,,4,Glass board - 1,No,Wifi
-104,Augusta,Bangalore ( Domlur ) ,2,Video conference Room,,6,Glass board - 1,Yes,Wifi
-105,Morfontaine,Bangalore ( Domlur ) ,2,Discussion Room,,4,Glass board - 1,No,Wifi
-106,Merion,Bangalore ( Domlur ) ,2,Discussion Room,,4,Glass board - 1,No,Wifi
-107,Old Course,Bangalore ( Domlur ) ,2,Discussion Room,,6,"Glass board - 1, TV -1",No,Wifi
-108,Sand Hills,Bangalore ( Domlur ) ,2,Cabin,Cabin,3,"Glass board - 1, TV -1",Yes,Wifi
-109,Prairie Dunes,Bangalore ( Domlur ) ,2,Cabin,Cabin,3,Glass board - 1,No,Wifi
-110,Pebble Beach,Bangalore ( Domlur ) ,2,Discussion Room,,4,"Glass board - 1, TV -1",No,Wifi
-111,Winged Foot,Bangalore ( Domlur ) ,2,Cabin,Cabin,3,Glass board - 1,No,Wifi
-112,Room 01,Bangalore ( Domlur ) ,2,Cabin,Cabin,4,Glass board - 1,No,Wifi
-113,Room 02,Bangalore ( Domlur ) ,2,Cabin,Cabin,4,Glass board - 1,No,Wifi
+94,Kanchenjunga,Bangalore(Domlur),2,Board Room,,14,"Glass board - 1, TV -1",Yes,Wifi
+95,Cabot Cliffs,Bangalore(Domlur),2,Training Room,,18,"Glass board - 2, TV -1",No,Wifi
+96,Oakmont,Bangalore(Domlur),2,Discussion Room,,6,"Glass board - 1, TV -1",No,Wifi
+97,Eagleton,Bangalore(Domlur),2,Discussion Room,,4,Glass board - 1,No,Wifi
+98,Cypress Point,Bangalore(Domlur),2,Discussion Room,,4,Glass board - 1,No,Wifi
+99,Royal County Down,Bangalore(Domlur),2,Discussion Room,,4,Glass board - 1,No,Wifi
+100,Pine Valley,Bangalore(Domlur),2,Discussion Room,,6,TV-1,No,Wifi
+101,Sunningdale,Bangalore(Domlur),2,Discussion Room,,4,Glass board - 1,No,Wifi
+102,Royal Dornoch,Bangalore(Domlur),2,Discussion Room,,4,Glass board - 1,No,Wifi
+103,Muirfield,Bangalore(Domlur),2,Discussion Room,,4,Glass board - 1,No,Wifi
+104,Augusta,Bangalore(Domlur),2,Video conference Room,,6,Glass board - 1,Yes,Wifi
+105,Morfontaine,Bangalore(Domlur),2,Discussion Room,,4,Glass board - 1,No,Wifi
+106,Merion,Bangalore(Domlur),2,Discussion Room,,4,Glass board - 1,No,Wifi
+107,Old Course,Bangalore(Domlur),2,Discussion Room,,6,"Glass board - 1, TV -1",No,Wifi
+108,Sand Hills,Bangalore(Domlur),2,Cabin,Cabin,3,"Glass board - 1, TV -1",Yes,Wifi
+109,Prairie Dunes,Bangalore(Domlur),2,Cabin,Cabin,3,Glass board - 1,No,Wifi
+110,Pebble Beach,Bangalore(Domlur),2,Discussion Room,,4,"Glass board - 1, TV -1",No,Wifi
+111,Winged Foot,Bangalore(Domlur),2,Cabin,Cabin,3,Glass board - 1,No,Wifi
+112,Room 01,Bangalore(Domlur),2,Cabin,Cabin,4,Glass board - 1,No,Wifi
+113,Room 02,Bangalore(Domlur),2,Cabin,Cabin,4,Glass board - 1,No,Wifi

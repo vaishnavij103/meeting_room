@@ -21,8 +21,8 @@ const locations = [
     "Ahmedabad",
     "Coimbatore",
     "Hyderabad",
-    "Bangalore ( Domlur )",
-    "Bangalore ( Signet )",
+    "Bangalore(Domlur)",
+    "Bangalore(Signet)",
     "Chennai",
 ];
 

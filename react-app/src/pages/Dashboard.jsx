@@ -41,6 +41,7 @@ export default function Dashboard() {
 
   const [adminContacts, setAdminContacts] = useState([]);
   const [adminContactsLoading, setAdminContactsLoading] = useState(false);
+  const [selectedAdmin, setSelectedAdmin] = useState(null);
 
   const [ibStart, setIbStart] = useState(null);
   const [ibEnd, setIbEnd] = useState(null)
@@ -83,8 +84,14 @@ export default function Dashboard() {
   useEffect(() => {
     setAdminContactsLoading(true);
     getAdminContacts({ location })
-      .then(setAdminContacts)
-      .catch(() => setAdminContacts([]))
+      .then(data => {
+        setAdminContacts(data);
+        setSelectedAdmin(data?.[0] || null);
+      })
+      .catch(() => {
+        setAdminContacts([]);
+        setSelectedAdmin(null);
+      })
       .finally(() => setAdminContactsLoading(false));
   }, [location]);
 
@@ -186,6 +193,87 @@ export default function Dashboard() {
         </h1>
         <p className={`text-sm ${theme === 'dark' ? 'text-slate-500' : 'text-slate-600'} mt-1`}>{todayStr}</p>
       </div>
+      <div className="mb-6">
+        {adminContactsLoading ? (
+          <div className={`rounded-2xl border p-6 text-sm text-center ${theme === 'dark' ? 'border-[#1e2a45] bg-[#0b1224] text-slate-400' : 'border-gray-200 bg-white text-slate-600'}`}>
+            Loading admin contacts...
+          </div>
+        ) : adminContacts.length === 0 ? (
+          <div className={`rounded-2xl border p-6 text-sm ${theme === 'dark' ? 'border-[#1e2a45] bg-[#0b1224] text-slate-400' : 'border-gray-200 bg-white text-slate-600'}`}>
+            No admin contacts are configured for {location}. Please ask your operations team to add them.
+          </div>
+        ) : (
+          <div >
+
+            {selectedAdmin && (
+              <>
+                <style>{`
+                @keyframes ticker {
+                  0% { transform: translateX(0); }
+                  100% { transform: translateX(-50%); }
+                }
+
+                .animate-ticker {
+                  animation: ticker 40s linear infinite;
+                  display: flex;
+                  width: max-content;
+                }
+
+                .animate-ticker:hover {
+                  animation-play-state: paused;
+                }
+              `}</style>
+
+                <div className={`relative overflow-hidden rounded-xl py-2 border shadow-sm ${theme === 'dark'
+                  ? 'bg-gradient-to-r from-[#0f1420] via-[#161c2e] to-[#0f1420] border-[#1e2a45]'
+                  : 'bg-gradient-to-r from-indigo-50/50 via-white to-indigo-50/50 border-indigo-100'
+                  }`}>
+
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-indigo-500/5 to-transparent animate-pulse" />
+
+                  <div className="animate-ticker flex items-center cursor-default text-xs">
+                    {[1, 2].map(i => (
+                      <div key={i} className="flex items-center gap-3 px-6">
+
+                        {/* Tag */}
+                        <div className="flex items-center gap-1  border-indigo-500/20  px-2 py-0.5 text-[12px]">
+                          📍 <span>Location Admin Details : </span>
+                        </div>
+
+                        {/* Name */}
+                        <div className="flex items-center gap-2">
+                          <div className="flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-violet-600 text-[10px] font-bold text-white">
+                            {selectedAdmin.name?.charAt(0)?.toUpperCase()}
+                          </div>
+
+                          <span className="whitespace-nowrap font-medium text-xs">
+                            {selectedAdmin.name}
+                          </span>
+                        </div>
+
+                        <span className="h-3 w-px bg-slate-400/30" />
+
+                        {/* Email */}
+                        <a href={`mailto:${selectedAdmin.email}`} className="text-indigo-500 text-xs whitespace-nowrap">
+                          ✉ {selectedAdmin.email}
+                        </a>
+
+                        <span className="h-3 w-px bg-slate-400/30" />
+
+                        {/* Phone */}
+                        <a href={`tel:${selectedAdmin.phone}`} className="text-emerald-500 text-xs whitespace-nowrap">
+                          📞 {selectedAdmin.phone}
+                        </a>
+
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+        )}
+      </div>
 
       {/* Apexon Core Values Marquee */}
       <div className={`relative flex overflow-hidden mb-6 rounded-2xl py-3.5 border shadow-sm ${theme === 'dark'
@@ -244,7 +332,7 @@ export default function Dashboard() {
       </div>
 
       {/* Company News Marquee */}
-      <div className={`relative flex overflow-hidden mb-6 rounded-xl py-2.5 border shadow-sm ${theme === 'dark'
+      {/* <div className={`relative flex overflow-hidden mb-6 rounded-xl py-2.5 border shadow-sm ${theme === 'dark'
         ? 'bg-gradient-to-r from-[#161c2e] via-[#0f1420] to-[#161c2e] border-[#1e2a45]'
         : 'bg-gradient-to-r from-amber-50/50 via-white to-amber-50/50 border-amber-100'
         }`}>
@@ -267,7 +355,7 @@ export default function Dashboard() {
             </div>
           ))}
         </div>
-      </div>
+      </div> */}
 
       {/* KPI Row */}
       <div className="grid grid-cols-4 gap-4 mb-6">
@@ -280,43 +368,7 @@ export default function Dashboard() {
         }
       </div>
 
-      <div className="mb-6">
-        <SectionHeader title="📞 Location Admins" />
-        <div className="grid gap-4 md:grid-cols-2">
-          {adminContactsLoading ? (
-            <div className={`rounded-2xl border p-6 text-sm text-center ${theme === 'dark' ? 'border-[#1e2a45] bg-[#0b1224] text-slate-400' : 'border-gray-200 bg-white text-slate-600'}`}>
-              Loading admin contacts...
-            </div>
-          ) : adminContacts.length === 0 ? (
-            <div className={`rounded-2xl border p-6 text-sm ${theme === 'dark' ? 'border-[#1e2a45] bg-[#0b1224] text-slate-400' : 'border-gray-200 bg-white text-slate-600'}`}>
-              No admin contacts are configured for {location}. Please ask your operations team to add them.
-            </div>
-          ) : adminContacts.map(contact => (
-            <div key={contact.admin_id} className={`rounded-2xl border p-5 ${theme === 'dark' ? 'border-[#1e2a45] bg-[#0b1224]' : 'border-gray-200 bg-white'}`}>
-              <div className="flex items-start justify-between gap-3 mb-3">
-                <div>
-                  <div className={`text-base font-semibold ${theme === 'dark' ? 'text-slate-100' : 'text-slate-900'}`}>{contact.name}</div>
-                  <div className={`text-xs tracking-wide ${theme === 'dark' ? 'text-slate-500' : 'text-slate-500'}`}>{contact.role || 'Site Admin'}</div>
-                </div>
-              </div>
-              <div className="space-y-2 text-sm">
-                <div>
-                  <div className="text-[0.65rem] uppercase tracking-[0.24em] text-slate-500 mb-1">Location</div>
-                  <div className={theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}>{contact.location}</div>
-                </div>
-                <div>
-                  <div className="text-[0.65rem] uppercase tracking-[0.24em] text-slate-500 mb-1">Email</div>
-                  <a href={`mailto:${contact.email}`} className={`text-sm font-medium ${theme === 'dark' ? 'text-indigo-300' : 'text-indigo-600'}`}>{contact.email}</a>
-                </div>
-                <div>
-                  <div className="text-[0.65rem] uppercase tracking-[0.24em] text-slate-500 mb-1">Phone</div>
-                  <a href={`tel:${contact.phone}`} className={`text-sm font-medium ${theme === 'dark' ? 'text-indigo-300' : 'text-indigo-600'}`}>{contact.phone}</a>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
+
 
       <div className="grid grid-cols-5 gap-6">
         {/* LEFT */}

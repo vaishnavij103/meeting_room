@@ -1,12 +1,15 @@
+import os
+import sys
 import uuid
 from datetime import datetime
 
-try:
-    from .models import Room, BookingError , LocationWiseRoom
-    from ..db.base import RoomRepository
-except ImportError:
-    from core.models import Room, BookingError , LocationWiseRoom # type: ignore
-    from db.base import RoomRepository  # type: ignore
+# Make the internal room-booking-api package importable from the repository root.
+package_root = os.path.join(os.path.dirname(os.path.abspath(__file__)), "room-booking-api")
+if package_root not in sys.path:
+    sys.path.insert(0, package_root)
+
+from core.models import Room, BookingError, LocationWiseRoom  # type: ignore
+from db.base import RoomRepository  # type: ignore
 
 
 def get_room(repo: RoomRepository, room_id: str) -> LocationWiseRoom:

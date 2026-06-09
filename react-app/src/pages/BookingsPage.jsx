@@ -48,15 +48,20 @@ export default function BookingsPage() {
   const [filterStatus, setFilterStatus] = useState('');
 
   const [search, setSearch] = useState("");
+  const [searchFocused, setSearchFocused] = useState(false);
   const [statusFilter, setStatusFilter] = useState("all");
   const [capacityFilter, setCapacityFilter] = useState("any");
   const [amenityFilters, setAmenityFilters] = useState([]);
 
   const AMENITIES = [
     "Projector",
-    "Wifi",
-    "AC",
-    "Whiteboard",
+    "White board",
+    "Board - Pillar",
+    "Samsung TV +Yealink Bar+ Yealink Wifi  Network device",
+    "Board -Glass Wall",
+    "Board -Glass Wall + Samsung TV",
+    "White Glass Board",
+    "TV/Hdmi Cable",
     "Food and Refreshment",
     "Video Call",
     "TV",
@@ -93,6 +98,7 @@ export default function BookingsPage() {
   };
 
   useEffect(reload, [reload]);
+
 
   const cityRooms = useMemo(() => {
     return rooms.filter(r => r.location === location);
@@ -200,17 +206,54 @@ export default function BookingsPage() {
           </div>
 
           {/* Search */}
-          <div className="mb-4">
+          <div className="mb-4 relative">
             <label className={`block text-xs ${theme === 'dark' ? 'text-slate-500' : 'text-slate-600'} mb-1`}>SEARCH</label>
             <input
               value={search}
               onChange={e => setSearch(e.target.value)}
+              onFocus={() => setSearchFocused(true)}
+              onBlur={() => setTimeout(() => setSearchFocused(false), 200)}
               placeholder="Name or feature..."
               className={`w-full px-3 py-2 rounded-xl ${theme === 'dark'
                 ? 'bg-[#0a0f1e] border-[#1e2a45] text-slate-100'
                 : 'bg-white border-gray-300 text-slate-900'
                 } border text-sm`}
             />
+            {/* Room dropdown */}
+            {(searchFocused || search) && (
+              <div className={`absolute top-full mt-1 w-full rounded-xl border shadow-lg z-10 ${theme === 'dark'
+                ? 'bg-[#0a0f1e] border-[#1e2a45]'
+                : 'bg-white border-gray-300'
+                } max-h-48 overflow-y-auto`}>
+                {activeRooms
+                  .filter(room =>
+                    search === '' || room.name.toLowerCase().includes(search.toLowerCase())
+                  )
+                  .map(room => (
+                    <button
+                      key={room.room_id}
+                      onClick={() => {
+                        setSearch(room.name);
+                        setSearchFocused(false);
+                      }}
+                      className={`w-full text-left px-3 py-2 text-sm hover:bg-indigo-500/10 transition-colors ${theme === 'dark'
+                        ? 'text-slate-200 hover:text-indigo-300'
+                        : 'text-slate-800 hover:text-indigo-600'
+                        }`}
+                    >
+                      {room.name}
+                    </button>
+                  ))
+                }
+                {activeRooms.filter(room =>
+                  search === '' || room.name.toLowerCase().includes(search.toLowerCase())
+                ).length === 0 && (
+                    <div className={`px-3 py-2 text-xs ${theme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`}>
+                      No rooms found
+                    </div>
+                  )}
+              </div>
+            )}
           </div>
 
           {/* Status */}

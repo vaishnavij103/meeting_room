@@ -27,8 +27,6 @@ export default function NotificationsPage() {
         }
     };
 
-    console.log(notifications)
-
     useEffect(() => {
         load();
     }, [user, filter]);
