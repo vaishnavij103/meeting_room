@@ -44,7 +44,20 @@ export default function Dashboard() {
   const [selectedAdmin, setSelectedAdmin] = useState(null);
 
   const [ibStart, setIbStart] = useState(null);
-  const [ibEnd, setIbEnd] = useState(null)
+  const [ibEnd, setIbEnd] = useState(null);
+  const [costCentre, setCostCentre] = useState('');
+  const [ibStartHour, setIbStartHour] = useState('08');
+  const [ibStartMin, setIbStartMin] = useState('00');
+  const [ibStartAMPM, setIbStartAMPM] = useState('AM');
+  const [ibEndHour, setIbEndHour] = useState('09');
+  const [ibEndMin, setIbEndMin] = useState('00');
+  const [ibEndAMPM, setIbEndAMPM] = useState('AM');
+
+  const [meetingType, setMeetingType] = useState("Internal Meeting");
+  const [meetingDescription, setMeetingDescription] = useState("");
+  const [advanceIntimation, setAdvanceIntimation] = useState("");
+  const [refreshment, setRefreshment] = useState("");
+  const [sendQR, setSendQR] = useState(false);
 
 
   const reload = () => {
@@ -181,6 +194,110 @@ export default function Dashboard() {
   ];
 
   const buildDateTime = (date, time) => `${date}T${time}:00`;
+
+  // Helper: Convert 12-hour format to 24-hour format
+  const convertTo24Hour = (hour, ampm) => {
+    let hr = parseInt(hour, 10);
+    if (ampm === 'AM') {
+      if (hr === 12) hr = 0;
+    } else {
+      if (hr !== 12) hr += 12;
+    }
+    return hr.toString().padStart(2, '0');
+  };
+
+  // Helper: Convert 24-hour format to 12-hour format
+  const convertTo12Hour = (hr24) => {
+    let hr = parseInt(hr24, 10);
+    const ampm = hr >= 12 ? 'PM' : 'AM';
+    if (hr === 0) hr = 12;
+    else if (hr > 12) hr -= 12;
+    return { hour: hr.toString().padStart(2, '0'), ampm };
+  };
+
+  // Helper: Check if a datetime string is in the past
+  const isTimePassed = (dateTimeStr) => {
+    return new Date(dateTimeStr) <= new Date();
+  };
+
+  // Helper: Get valid time options (filter out past times for today)
+  const getValidTimeOptions = () => {
+    const today = format(new Date(), 'yyyy-MM-dd');
+    const now = format(new Date(), 'HH:mm');
+
+    if (ibDate === today) {
+      // Filter out times that have already passed
+      return TIME_OPTIONS.filter(opt => opt.value >= now);
+    }
+    // All times available for future dates
+    return TIME_OPTIONS;
+  };
+
+  // Helper: Check if end time is valid (after start time)
+  const isEndTimeValid = (startTime, endTime) => {
+    if (!startTime || !endTime) return false;
+    return new Date(endTime) > new Date(startTime);
+  };
+
+  // Handle Start Time Selection
+  const handleStartTimeChange = (timeValue) => {
+    if (!timeValue) {
+      setIbStart(null);
+      setIbEnd(null);
+      setIbMsg({ type: '', text: '' });
+      return;
+    }
+
+    const selectedDateTime = buildDateTime(ibDate, timeValue);
+    setIbStart(selectedDateTime);
+    setIbEnd(null); // Reset end time when start time changes
+    setIbMsg({ type: '', text: '' });
+    const { hour, ampm } = convertTo12Hour(timeValue.split(':')[0]);
+    setIbStartHour(hour);
+    setIbStartMin(timeValue.split(':')[1]);
+    setIbStartAMPM(ampm);
+  };
+
+  // Handle End Time Selection
+  const handleEndTimeChange = (timeValue) => {
+    if (!timeValue) {
+      setIbEnd(null);
+      setIbMsg({ type: '', text: '' });
+      return;
+    }
+
+    const selectedDateTime = buildDateTime(ibDate, timeValue);
+
+    // Validate: end time must be after start time
+    if (!isEndTimeValid(ibStart, selectedDateTime)) {
+      setIbMsg({
+        type: 'error',
+        text: 'End time must be after start time.',
+      });
+      return;
+    }
+
+    setIbEnd(selectedDateTime);
+    setIbMsg({ type: '', text: '' });
+    const { hour, ampm } = convertTo12Hour(timeValue.split(':')[0]);
+    setIbEndHour(hour);
+    setIbEndMin(timeValue.split(':')[1]);
+    setIbEndAMPM(ampm);
+  };
+
+  // Handle manual start time input (12-hour format)
+  const handleManualStartTime = () => {
+    const hr24 = convertTo24Hour(ibStartHour, ibStartAMPM);
+    const timeValue = `${hr24}:${ibStartMin}`;
+    handleStartTimeChange(timeValue);
+  };
+
+  // Handle manual end time input (12-hour format)
+  const handleManualEndTime = () => {
+    const hr24 = convertTo24Hour(ibEndHour, ibEndAMPM);
+    const timeValue = `${hr24}:${ibEndMin}`;
+    handleEndTimeChange(timeValue);
+  };
 
   if (loading) return <div className={`text-center py-20 ${theme === 'dark' ? 'text-slate-500' : 'text-slate-600'}`}>Loading...</div>;
 
@@ -359,7 +476,7 @@ export default function Dashboard() {
 
       {/* KPI Row */}
       <div className="grid grid-cols-4 gap-4 mb-6">
-        <StatCard label="Active Rooms" value={stats.active_rooms || 0} icon="🏢" color="#818cf8" />
+        <StatCard label="Available Rooms" value={activeRooms.length || 0} icon="🏢" color="#818cf8" />
         <StatCard label="Total Bookings" value={stats.total_bookings || 0} icon="📅" color="#34d399" />
         <StatCard label="Today's Meetings" value={stats.today_bookings || 0} icon="✅" color="#fbbf24" />
         {isAdmin
@@ -440,7 +557,7 @@ export default function Dashboard() {
             ) : (
               <>
                 <datalist id="time-options">
-                  {TIME_OPTIONS.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+                  {getValidTimeOptions().map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
                 </datalist>
                 {/* Time Picker */}
                 <div className="grid grid-cols-2 gap-6 mb-4">
@@ -461,9 +578,7 @@ export default function Dashboard() {
                         list="time-options"
                         required
                         value={ibStart ? ibStart.slice(11, 16) : ""}
-                        onChange={e =>
-                          setIbStart(e.target.value ? buildDateTime(ibDate, e.target.value) : null)
-                        }
+                        onChange={e => handleStartTimeChange(e.target.value)}
                         className={`bg-transparent w-full ${theme === 'dark' ? 'text-slate-100' : 'text-slate-900'} text-sm outline-none cursor-pointer`}
                       />
                     </div>
@@ -484,11 +599,10 @@ export default function Dashboard() {
                         type="time"
                         list="time-options"
                         required
+                        disabled={!ibStart}
                         value={ibEnd ? ibEnd.slice(11, 16) : ""}
-                        onChange={e =>
-                          setIbEnd(e.target.value ? buildDateTime(ibDate, e.target.value) : null)
-                        }
-                        className={`bg-transparent w-full ${theme === 'dark' ? 'text-slate-100' : 'text-slate-900'} text-sm outline-none cursor-pointer`}
+                        onChange={e => handleEndTimeChange(e.target.value)}
+                        className={`bg-transparent w-full ${theme === 'dark' ? 'text-slate-100' : 'text-slate-900'} text-sm outline-none cursor-pointer ${!ibStart ? 'opacity-50 cursor-not-allowed' : ''}`}
                       />
                     </div>
                   </div>
@@ -510,16 +624,145 @@ export default function Dashboard() {
                 </div>
 
                 <div className="flex gap-3 items-end">
-                  <input
-                    type="text"
-                    value={ibTitle}
-                    onChange={e => setIbTitle(e.target.value)}
-                    placeholder="Meeting title (optional)"
-                    className={`flex-1 px-4 py-2.5 rounded-xl ${theme === 'dark'
-                      ? 'bg-[#0a0f1e] border-[#1e2a45] text-slate-100'
-                      : 'bg-white border-gray-300 text-slate-900'
-                      } border text-sm`}
-                  />
+                  <div className="space-y-4">
+
+                    {/* Meeting Type */}
+                    <div>
+                      <label
+                        className={`block text-xs font-semibold ${theme === "dark" ? "text-slate-500" : "text-slate-600"
+                          } uppercase tracking-wider mb-1.5`}
+                      >
+                        Meeting Type
+                      </label>
+
+                      <select
+                        value={meetingType}
+                        onChange={(e) => setMeetingType(e.target.value)}
+                        className={`w-full px-4 py-2.5 rounded-xl ${theme === "dark"
+                            ? "bg-[#0a0f1e] border-[#1e2a45] text-slate-100"
+                            : "bg-white border-gray-300 text-slate-900"
+                          } border text-sm outline-none transition-all focus:border-indigo-500`}
+                      >
+                        <option>Internal Meeting</option>
+                        <option>External Meeting</option>
+                      </select>
+                    </div>
+
+                    {/* Meeting Description */}
+                    <div>
+                      <label
+                        className={`block text-xs font-semibold ${theme === "dark" ? "text-slate-500" : "text-slate-600"
+                          } uppercase tracking-wider mb-1.5`}
+                      >
+                        Meeting Description
+                      </label>
+
+                      <textarea
+                        rows={3}
+                        value={meetingDescription}
+                        onChange={(e) => setMeetingDescription(e.target.value)}
+                        placeholder="Enter meeting agenda or description"
+                        className={`w-full px-4 py-2.5 rounded-xl ${theme === "dark"
+                            ? "bg-[#0a0f1e] border-[#1e2a45] text-slate-100 placeholder-slate-600"
+                            : "bg-white border-gray-300 text-slate-900 placeholder-slate-400"
+                          } border text-sm outline-none transition-all focus:border-indigo-500`}
+                      />
+                    </div>
+
+                    {/* External Meeting Fields */}
+                    {meetingType === "External Meeting" && (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+                        {/* Cost Centre */}
+                        <div>
+                          <label
+                            className={`block text-xs font-semibold ${theme === "dark" ? "text-slate-500" : "text-slate-600"
+                              } uppercase tracking-wider mb-1.5`}
+                          >
+                            Cost Centre
+                          </label>
+
+                          <input
+                            type="text"
+                            value={costCentre}
+                            onChange={(e) => setCostCentre(e.target.value)}
+                            placeholder="e.g. CC-1234"
+                            className={`w-full px-4 py-2.5 rounded-xl ${theme === "dark"
+                                ? "bg-[#0a0f1e] border-[#1e2a45] text-slate-100 placeholder-slate-600"
+                                : "bg-white border-gray-300 text-slate-900 placeholder-slate-400"
+                              } border text-sm outline-none transition-all focus:border-indigo-500`}
+                          />
+                        </div>
+
+                        {/* Advance Intimation */}
+                        <div>
+                          <label
+                            className={`block text-xs font-semibold ${theme === "dark" ? "text-slate-500" : "text-slate-600"
+                              } uppercase tracking-wider mb-1.5`}
+                          >
+                            Advance Intimation
+                          </label>
+
+                          <input
+                            type="number"
+                            min="0"
+                            value={advanceIntimation}
+                            onChange={(e) => setAdvanceIntimation(e.target.value)}
+                            placeholder="Hours before meeting"
+                            className={`w-full px-4 py-2.5 rounded-xl ${theme === "dark"
+                                ? "bg-[#0a0f1e] border-[#1e2a45] text-slate-100 placeholder-slate-600"
+                                : "bg-white border-gray-300 text-slate-900 placeholder-slate-400"
+                              } border text-sm outline-none transition-all focus:border-indigo-500`}
+                          />
+                        </div>
+
+                        {/* Refreshment */}
+                        <div>
+                          <label
+                            className={`block text-xs font-semibold ${theme === "dark" ? "text-slate-500" : "text-slate-600"
+                              } uppercase tracking-wider mb-1.5`}
+                          >
+                            Refreshment
+                          </label>
+
+                          <select
+                            value={refreshment}
+                            onChange={(e) => setRefreshment(e.target.value)}
+                            className={`w-full px-4 py-2.5 rounded-xl ${theme === "dark"
+                                ? "bg-[#0a0f1e] border-[#1e2a45] text-slate-100"
+                                : "bg-white border-gray-300 text-slate-900"
+                              } border text-sm outline-none transition-all focus:border-indigo-500`}
+                          >
+                            <option value="">Select</option>
+                            <option value="Meal">Meal</option>
+                            <option value="Lunch">Lunch</option>
+                            <option value="Snacks">Snacks</option>
+                          </select>
+                        </div>
+
+                        {/* Send QR */}
+                        <div className="flex items-end">
+                          <label className="flex items-center gap-3 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={sendQR}
+                              onChange={(e) => setSendQR(e.target.checked)}
+                              className="h-4 w-4 accent-indigo-600"
+                            />
+                            <span
+                              className={`text-sm ${theme === "dark" ? "text-slate-300" : "text-slate-700"
+                                }`}
+                            >
+                              Send QR to Invitees
+                            </span>
+                          </label>
+                        </div>
+
+                      </div>
+                    )}
+
+                  </div>
+
 
                   <button
                     onClick={handleInstantBook}

@@ -31,6 +31,12 @@ export default function SlotPicker({ room, onBooked, onClose }) {
   const [success, setSuccess] = useState('');
   const [ibStart, setIbStart] = useState(null);
   const [ibEnd, setIbEnd] = useState(null);
+  const [ibStartHour, setIbStartHour] = useState('08');
+  const [ibStartMin, setIbStartMin] = useState('00');
+  const [ibStartAMPM, setIbStartAMPM] = useState('AM');
+  const [ibEndHour, setIbEndHour] = useState('09');
+  const [ibEndMin, setIbEndMin] = useState('00');
+  const [ibEndAMPM, setIbEndAMPM] = useState('AM');
   const pickerRef = useRef(null);
 
   useEffect(() => {
@@ -62,6 +68,7 @@ export default function SlotPicker({ room, onBooked, onClose }) {
   const isAdmin = user?.role === 'admin';
   const canBook = (room.allowed_users?.length || 0) === 0 || isAdmin || (user && (room.allowed_users || []).includes(user.user_id));
 
+  console.log(slots)
   const handleConfirm = async () => {
     if (!selectedSlot && (!ibStart || !ibEnd)) return;
     const st = ibStart || selectedSlot?.start_time;
@@ -90,6 +97,128 @@ export default function SlotPicker({ room, onBooked, onClose }) {
   };
 
   const buildDateTime = (date, time) => `${date}T${time}:00`;
+
+  // Helper: Convert 12-hour format to 24-hour format
+  const convertTo24Hour = (hour, ampm) => {
+    let hr = parseInt(hour, 10);
+    if (ampm === 'AM') {
+      if (hr === 12) hr = 0;
+    } else {
+      if (hr !== 12) hr += 12;
+    }
+    return hr.toString().padStart(2, '0');
+  };
+
+  // Helper: Convert 24-hour format to 12-hour format
+  const convertTo12Hour = (hr24) => {
+    let hr = parseInt(hr24, 10);
+    const ampm = hr >= 12 ? 'PM' : 'AM';
+    if (hr === 0) hr = 12;
+    else if (hr > 12) hr -= 12;
+    return { hour: hr.toString().padStart(2, '0'), ampm };
+  };
+
+  // Helper: Check if a datetime string is in the past
+  const isTimePassed = (dateTimeStr) => {
+    return new Date(dateTimeStr) <= new Date();
+  };
+
+  // Helper: Get valid time options (filter out past times for today)
+  const getValidTimeOptions = () => {
+    const today = format(new Date(), 'yyyy-MM-dd');
+    const now = format(new Date(), 'HH:mm');
+
+    if (date === today) {
+      // Filter out times that have already passed
+      return TIME_OPTIONS.filter(opt => opt.value >= now);
+    }
+    // All times available for future dates
+    return TIME_OPTIONS;
+  };
+
+  // Helper: Check if end time is valid (after start time)
+  const isEndTimeValid = (startTime, endTime) => {
+    if (!startTime || !endTime) return false;
+    return new Date(endTime) > new Date(startTime);
+  };
+
+  // Handle Start Time Selection
+  const handleStartTimeChange = (timeValue) => {
+    if (!timeValue) {
+      setIbStart(null);
+      setIbEnd(null);
+      setIbMsg({ type: '', text: '' });
+      return;
+    }
+
+    const selectedDateTime = buildDateTime(date, timeValue);
+    setIbStart(selectedDateTime);
+    setIbEnd(null); // Reset end time when start time changes
+    setIbMsg({ type: '', text: '' });
+    const { hour, ampm } = convertTo12Hour(timeValue.split(':')[0]);
+    setIbStartHour(hour);
+    setIbStartMin(timeValue.split(':')[1]);
+    setIbStartAMPM(ampm);
+  };
+
+  // Handle End Time Selection
+  const handleEndTimeChange = (timeValue) => {
+    if (!timeValue) {
+      setIbEnd(null);
+      setIbMsg({ type: '', text: '' });
+      return;
+    }
+
+    const selectedDateTime = buildDateTime(date, timeValue);
+
+    // Validate: end time must be after start time
+    if (!isEndTimeValid(ibStart, selectedDateTime)) {
+      setIbMsg({
+        type: 'error',
+        text: 'End time must be after start time.',
+      });
+      return;
+    }
+
+    setIbEnd(selectedDateTime);
+    setIbMsg({ type: '', text: '' });
+    const { hour, ampm } = convertTo12Hour(timeValue.split(':')[0]);
+    setIbEndHour(hour);
+    setIbEndMin(timeValue.split(':')[1]);
+    setIbEndAMPM(ampm);
+  };
+
+  // Handle manual start time input (12-hour format)
+  const handleManualStartTime = () => {
+    const hr24 = convertTo24Hour(ibStartHour, ibStartAMPM);
+    const timeValue = `${hr24}:${ibStartMin}`;
+    handleStartTimeChange(timeValue);
+  };
+
+  // Handle manual end time input (12-hour format)
+  const handleManualEndTime = () => {
+    const hr24 = convertTo24Hour(ibEndHour, ibEndAMPM);
+    const timeValue = `${hr24}:${ibEndMin}`;
+    handleEndTimeChange(timeValue);
+  };
+
+  // Check if selected range has any unavailable slot
+  const isUnavailable = slots
+    .filter(slot => slot.start_time >= ibStart && slot.end_time <= ibEnd)
+    .some(slot => !slot.is_available);
+
+  // Decide color + icon
+  const textColor = isUnavailable
+    ? theme === "dark"
+      ? "text-red-400"
+      : "text-red-600"
+    : theme === "dark"
+      ? "text-emerald-400"
+      : "text-emerald-700";
+
+  const icon = isUnavailable ? "❌" : "📅";
+
+
 
   return (
     <div ref={pickerRef} className="animate-fade-up mt-4 scroll-mt-24">
@@ -120,7 +249,7 @@ export default function SlotPicker({ room, onBooked, onClose }) {
 
       <div className="grid grid-cols-2 gap-6 mb-4">
         <datalist id="time-options-slot">
-          {TIME_OPTIONS.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+          {getValidTimeOptions().map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
         </datalist>
 
         {/* START TIME */}
@@ -139,9 +268,7 @@ export default function SlotPicker({ room, onBooked, onClose }) {
               list="time-options-slot"
               required
               value={ibStart ? ibStart.slice(11, 16) : ""}
-              onChange={e =>
-                setIbStart(e.target.value ? buildDateTime(date, e.target.value) : null)
-              }
+              onChange={e => handleStartTimeChange(e.target.value)}
               className={`bg-transparent w-full ${theme === 'dark' ? 'text-slate-100' : 'text-slate-900'} text-sm outline-none cursor-pointer`}
             />
           </div>
@@ -162,10 +289,9 @@ export default function SlotPicker({ room, onBooked, onClose }) {
               type="time"
               list="time-options-slot"
               required
+              disabled={!ibStart}
               value={ibEnd ? ibEnd.slice(11, 16) : ""}
-              onChange={e =>
-                setIbEnd(e.target.value ? buildDateTime(date, e.target.value) : null)
-              }
+              onChange={e => handleEndTimeChange(e.target.value)}
               className={`bg-transparent w-full ${theme === 'dark' ? 'text-slate-100' : 'text-slate-900'} text-sm outline-none cursor-pointer`}
             />
           </div>
@@ -199,9 +325,11 @@ export default function SlotPicker({ room, onBooked, onClose }) {
             ? 'bg-emerald-500/8 border-emerald-500/20'
             : 'bg-emerald-100 border-emerald-300'
             } border mb-4`}>
-            <div className={`text-sm font-semibold ${theme === 'dark' ? 'text-emerald-400' : 'text-emerald-700'}`}>
-              📅 {room.name} · {date} · {ibStart.slice(11, 16)} – {ibEnd.slice(11, 16)}
+
+            <div className={`text-sm font-semibold ${textColor}`}>
+              {icon} {room.name} · {date} · {ibStart.slice(11, 16)} – {ibEnd.slice(11, 16)}
             </div>
+
           </div>
           <div className="flex gap-3 items-end">
             <div className="flex-1">

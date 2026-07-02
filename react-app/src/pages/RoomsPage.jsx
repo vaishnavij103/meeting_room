@@ -195,7 +195,7 @@ function RoomForm({ existing, onSave, onCancel }) {
           <Input label="Floor" type="number" min="0" value={floor} onChange={e => setFloor(e.target.value)} />
           {existing && (
             <Select label="Status" value={status} onChange={e => setStatus(e.target.value)}
-              options={[{ value: 'active', label: 'Active' }, { value: 'inactive', label: 'Inactive' }]} />
+              options={[{ value: 'active', label: 'Available' }, { value: 'inactive', label: 'Unavailable' }]} />
           )}
         </div>
         <div className="mb-4">

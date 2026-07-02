@@ -268,8 +268,8 @@ export default function BookingsPage() {
                 } border text-sm`}
             >
               <option value="all">All Statuses</option>
-              <option value="active">Active</option>
-              <option value="inactive">Inactive</option>
+              <option value="active">Available</option>
+              <option value="inactive">Unavailable</option>
             </select>
           </div>
 
