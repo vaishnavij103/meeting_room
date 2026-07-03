@@ -304,36 +304,23 @@ def _make_default_app() -> FastAPI:
     notifications_db_url = get_notifications_database_url() or db_url
 
     if db_url:
-        # create repos so we can optionally run seeding logic before returning the app
-        room_repo = PostgresRoomRepo(db_url)
-        booking_repo = PostgresBookingRepo(db_url)
-        user_repo = PostgresUserRepo(db_url)
-        admin_repo = PostgresAdminContactRepo(db_url)
-        notification_repo = PostgresNotificationRepo(notifications_db_url or db_url)
-        app = create_app(room_repo=room_repo, booking_repo=booking_repo, user_repo=user_repo, admin_repo=admin_repo, notification_repo=notification_repo)
-        try:
-            # run seeds based on environment or empty DB
-            from ..core.seeds import maybe_run_seeds
-            maybe_run_seeds(room_repo, user_repo, admin_repo)
-        except Exception:
-            pass
-        return app
+        return create_app(
+            room_repo=PostgresRoomRepo(db_url),
+            booking_repo=PostgresBookingRepo(db_url),
+            user_repo=PostgresUserRepo(db_url),
+            admin_repo=PostgresAdminContactRepo(db_url),
+            notification_repo=PostgresNotificationRepo(notifications_db_url or db_url),
+        )
 
     db_path = get_db_path()
     notifications_db_path = get_notifications_db_path()
-    # create repos first so we can seed the DB if needed
-    room_repo = SQLiteRoomRepo(db_path)
-    booking_repo = SQLiteBookingRepo(db_path)
-    user_repo = SQLiteUserRepo(db_path)
-    admin_repo = SQLiteAdminContactRepo(db_path)
-    notification_repo = SQLiteNotificationRepo(notifications_db_path)
-    app = create_app(room_repo=room_repo, booking_repo=booking_repo, user_repo=user_repo, admin_repo=admin_repo, notification_repo=notification_repo)
-    try:
-        from ..core.seeds import maybe_run_seeds
-        maybe_run_seeds(room_repo, user_repo, admin_repo)
-    except Exception:
-        pass
-    return app
+    return create_app(
+        room_repo=SQLiteRoomRepo(db_path),
+        booking_repo=SQLiteBookingRepo(db_path),
+        user_repo=SQLiteUserRepo(db_path),
+        admin_repo=SQLiteAdminContactRepo(db_path),
+        notification_repo=SQLiteNotificationRepo(notifications_db_path),
+    )
 
 
 app = _make_default_app()
