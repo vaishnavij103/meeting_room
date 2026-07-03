@@ -135,6 +135,9 @@ def create_booking(
         attendees=data.get("attendees", []),
         notes=data.get("notes", ""),
         cost_centre=data.get("cost_centre", ""),
+        meeting_type=data.get("meeting_type", "Internal Meeting"),
+        meeting_description=data.get("meeting_description", ""),
+        send_qr=bool(data.get("send_qr", False)),
         created_at=now,
         updated_at=now,
     )
@@ -186,6 +189,12 @@ def update_booking(
         booking.attendees = data["attendees"]
     if "cost_centre" in data:
         booking.cost_centre = data["cost_centre"]
+    if "meeting_type" in data:
+        booking.meeting_type = data["meeting_type"]
+    if "meeting_description" in data:
+        booking.meeting_description = data["meeting_description"]
+    if "send_qr" in data:
+        booking.send_qr = bool(data["send_qr"])
 
     booking.updated_at = _now_iso()
     return booking_repo.update(booking)

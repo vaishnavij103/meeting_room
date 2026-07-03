@@ -106,6 +106,16 @@ def update_room(repo: RoomRepository, room_id: str, data: dict) -> LocationWiseR
         room.status = data["status"]
     if "allowed_users" in data:
         room.allowed_users = data["allowed_users"]
+    if "building" in data:
+        room.building = data["building"]
+    if "room_type" in data:
+        room.room_type = data["room_type"]
+    if "cabin_type" in data:
+        room.cabin_type = data["cabin_type"]
+    if "vc_enabled" in data:
+        room.vc_enabled = data["vc_enabled"]
+    if "power_points" in data:
+        room.power_points = data["power_points"]
 
     room.updated_at = datetime.utcnow().isoformat()
     return repo.update(room)

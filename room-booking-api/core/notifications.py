@@ -7,10 +7,12 @@ from typing import Optional
 
 try:
     from .models import Notification, Booking, BookingError
-    from ..db.base import NotificationRepository, UserRepository
+    from .qr import build_external_meeting_qr_payload, generate_qr_code_data_url
+    from ..db.base import NotificationRepository, UserRepository, RoomRepository
 except ImportError:
     from core.models import Notification, Booking, BookingError  # type: ignore
-    from db.base import NotificationRepository, UserRepository  # type: ignore
+    from core.qr import build_external_meeting_qr_payload, generate_qr_code_data_url  # type: ignore
+    from db.base import NotificationRepository, UserRepository, RoomRepository  # type: ignore
 
 
 def _now_iso() -> str:
@@ -102,11 +104,47 @@ def _admin_user_ids(user_repo: UserRepository) -> list[str]:
     return [u.user_id for u in user_repo.list() if u.role == "admin"]
 
 
+def _build_notification_metadata(
+    booking: Booking,
+    user,
+    room_repo: RoomRepository,
+    event_type: str,
+) -> dict:
+    metadata = {
+        "event_type": event_type,
+        "booking_id": booking.booking_id,
+        "user_id": booking.user_id,
+    }
+
+    should_attach_qr = (
+        booking.send_qr
+        and booking.meeting_type == "External Meeting"
+        and event_type in {"created", "updated"}
+    )
+
+    if should_attach_qr:
+        room = room_repo.get(booking.room_id) if room_repo is not None else None
+        room_name = room.name if room is not None else booking.room_id
+        payload = build_external_meeting_qr_payload(
+            booking=booking,
+            user=user,
+            room_name=room_name,
+            meeting_description=booking.meeting_description or booking.notes,
+            cost_centre=booking.cost_centre,
+            meeting_type=booking.meeting_type,
+        )
+        metadata["qr_payload"] = payload
+        metadata["qr_data_url"] = generate_qr_code_data_url(json.dumps(payload))
+
+    return metadata
+
+
 def notify_booking_event(
     notification_repo: NotificationRepository,
     user_repo: UserRepository,
     booking: Booking,
     event_type: str,
+    room_repo: RoomRepository,
 ) -> list[Notification]:
     user = user_repo.get(booking.user_id)
     if user is None:
@@ -138,6 +176,7 @@ def notify_booking_event(
                 name=user.name,
             )
             title = user_title
+            metadata = _build_notification_metadata(booking, user, room_repo, event_type)
         else:
             message = admin_message_template.format(
                 title=booking.title,
@@ -147,6 +186,11 @@ def notify_booking_event(
                 name=user.name,
             )
             title = f"User booking {event_type}"
+            metadata = {
+                "event_type": event_type,
+                "booking_id": booking.booking_id,
+                "user_id": booking.user_id,
+            }
 
         notifications.append(
             create_notification(
@@ -155,11 +199,7 @@ def notify_booking_event(
                 title=title,
                 message=message,
                 type="booking",
-                metadata={
-                    "event_type": event_type,
-                    "booking_id": booking.booking_id,
-                    "user_id": booking.user_id,
-                },
+                metadata=metadata,
                 related_booking_id=booking.booking_id,
                 sender_id=None,
             )

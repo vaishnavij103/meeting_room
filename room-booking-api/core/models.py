@@ -64,6 +64,9 @@ class Booking:
     created_at: str
     updated_at: str
     cost_centre: str = ''
+    meeting_type: str = 'Internal Meeting'
+    meeting_description: str = ''
+    send_qr: bool = False
     actual_check_in: str = None
     actual_check_out: str = None
 

@@ -118,6 +118,7 @@ export default function NotificationsPage() {
                         const cardBg = theme === 'dark' ? 'border-slate-700 bg-slate-950 text-slate-100' : 'border-gray-200 bg-white text-slate-900';
                         const bodyText = theme === 'dark' ? 'text-slate-300' : 'text-slate-600';
                         const mutedText = theme === 'dark' ? 'text-slate-400' : 'text-slate-500';
+                        const qrDataUrl = notification.metadata?.qr_data_url;
 
                         return (
                             <div key={notification.notification_id} className={`relative overflow-hidden rounded-[2rem] border p-5 shadow-sm transition duration-200 hover:shadow-xl sm:px-6 sm:py-5 ${cardBg}`}>
@@ -135,6 +136,21 @@ export default function NotificationsPage() {
                                                 </span>
                                             </div>
                                         </div>
+                                        {qrDataUrl && (
+                                            <div className={`rounded-2xl border p-4 ${theme === 'dark' ? 'border-slate-700 bg-slate-900' : 'border-gray-200 bg-slate-50'}`}>
+                                                <div className={`text-sm font-semibold mb-3 ${theme === 'dark' ? 'text-slate-100' : 'text-slate-900'}`}>
+                                                    QR Code for meeting
+                                                </div>
+                                                <img
+                                                    src={qrDataUrl}
+                                                    alt="Meeting QR Code"
+                                                    className="mx-auto h-48 w-48 rounded-xl bg-white p-2 shadow-sm"
+                                                />
+                                                <p className={`mt-3 text-xs ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>
+                                                    Scan this QR code to share meeting details with invitees.
+                                                </p>
+                                            </div>
+                                        )}
                                         <div className={`flex flex-wrap items-center gap-3 text-sm ${mutedText}`}>
                                             <span>{timeLabel}</span>
                                             {notification.related_booking_id && (

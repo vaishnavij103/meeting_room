@@ -26,9 +26,13 @@ export default function SlotPicker({ room, onBooked, onClose }) {
   const [selectedSlot, setSelectedSlot] = useState(null);
   const [title, setTitle] = useState('');
   const [costCentre, setCostCentre] = useState('');
+  const [meetingType, setMeetingType] = useState('Internal Meeting');
+  const [meetingDescription, setMeetingDescription] = useState('');
+  const [sendQR, setSendQR] = useState(false);
   const [booking, setBooking] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [ibMsg, setIbMsg] = useState({ type: '', text: '' });
   const [ibStart, setIbStart] = useState(null);
   const [ibEnd, setIbEnd] = useState(null);
   const [ibStartHour, setIbStartHour] = useState('08');
@@ -68,7 +72,6 @@ export default function SlotPicker({ room, onBooked, onClose }) {
   const isAdmin = user?.role === 'admin';
   const canBook = (room.allowed_users?.length || 0) === 0 || isAdmin || (user && (room.allowed_users || []).includes(user.user_id));
 
-  console.log(slots)
   const handleConfirm = async () => {
     if (!selectedSlot && (!ibStart || !ibEnd)) return;
     const st = ibStart || selectedSlot?.start_time;
@@ -82,14 +85,22 @@ export default function SlotPicker({ room, onBooked, onClose }) {
         user_id: user.user_id,
         start_time: st,
         end_time: et,
-        notes: '',
+        notes: meetingDescription,
         cost_centre: costCentre.trim(),
+        meeting_type: meetingType,
+        meeting_description: meetingDescription,
+        send_qr: sendQR,
       });
       setSuccess(`Booked! ${room.name} at ${st.slice(11, 16)}`);
       setSelectedSlot(null);
       setIbStart(null);
       setIbEnd(null);
       setTitle('');
+      setMeetingType('Internal Meeting');
+      setMeetingDescription('');
+      setCostCentre('');
+      setSendQR(false);
+      setIbMsg({ type: '', text: '' });
       setTimeout(() => { onBooked?.(); }, 800);
     } catch (e) {
       setError(e.status === 409 ? 'Slot just got taken. Pick another.' : (e.detail || e.message));
@@ -350,6 +361,48 @@ export default function SlotPicker({ room, onBooked, onClose }) {
                   : 'bg-white border-gray-300 text-slate-900 placeholder-slate-400 focus:border-indigo-500'
                   } border text-sm outline-none transition-all`} />
             </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div>
+              <label className={`block text-xs font-semibold ${theme === 'dark' ? 'text-slate-500' : 'text-slate-600'} uppercase tracking-wider mb-1.5`}>Meeting Type</label>
+              <select
+                value={meetingType}
+                onChange={(e) => setMeetingType(e.target.value)}
+                className={`w-full px-4 py-2.5 rounded-xl ${theme === 'dark'
+                  ? 'bg-[#0a0f1e] border-[#1e2a45] text-slate-100'
+                  : 'bg-white border-gray-300 text-slate-900'
+                  } border text-sm outline-none transition-all`}>
+                <option>Internal Meeting</option>
+                <option>External Meeting</option>
+              </select>
+            </div>
+            <div className="flex items-end">
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={sendQR}
+                  onChange={(e) => setSendQR(e.target.checked)}
+                  className="h-4 w-4 accent-indigo-600"
+                />
+                <span className={`text-sm ${theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>
+                  Send QR to Invitees
+                </span>
+              </label>
+            </div>
+          </div>
+          <div className="mb-4">
+            <label className={`block text-xs font-semibold ${theme === 'dark' ? 'text-slate-500' : 'text-slate-600'} uppercase tracking-wider mb-1.5`}>Meeting Description</label>
+            <textarea
+              rows={3}
+              value={meetingDescription}
+              onChange={(e) => setMeetingDescription(e.target.value)}
+              placeholder="Enter meeting agenda or description"
+              className={`w-full px-4 py-2.5 rounded-xl ${theme === 'dark'
+                ? 'bg-[#0a0f1e] border-[#1e2a45] text-slate-100 placeholder-slate-600'
+                : 'bg-white border-gray-300 text-slate-900 placeholder-slate-400'
+                } border text-sm outline-none transition-all`} />
+          </div>
+          <div className="flex gap-3 items-end">
             <button onClick={handleConfirm} disabled={booking || !canBook}
               className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-bold text-sm hover:from-emerald-600 hover:to-teal-600 transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-emerald-500/25 disabled:opacity-50 whitespace-nowrap">
               {booking ? '⏳...' : '✅ Confirm Booking'}

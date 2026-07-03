@@ -131,7 +131,11 @@ export default function Dashboard() {
         user_id: user.user_id,
         start_time: ibStart,   // ✅ HH:MM IST → ISO
         end_time: ibEnd,       // ✅ HH:MM IST → ISO
-        notes: "",
+        notes: meetingDescription,
+        cost_centre: costCentre.trim(),
+        meeting_type: meetingType,
+        meeting_description: meetingDescription,
+        send_qr: sendQR,
       });
 
       const rName =

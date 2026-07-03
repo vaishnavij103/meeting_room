@@ -66,6 +66,9 @@ CREATE TABLE IF NOT EXISTS bookings (
     attendees JSONB NOT NULL DEFAULT '[]'::jsonb,
     notes TEXT NOT NULL DEFAULT '',
     cost_centre TEXT NOT NULL DEFAULT '',
+    meeting_type TEXT NOT NULL DEFAULT 'Internal Meeting',
+    meeting_description TEXT NOT NULL DEFAULT '',
+    send_qr BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL,
     actual_check_in TEXT,
@@ -93,6 +96,18 @@ def _run_migrations(database_url: str) -> None:
         with conn.cursor() as cur:
             try:
                 cur.execute("ALTER TABLE bookings ADD COLUMN cost_centre TEXT NOT NULL DEFAULT ''")
+            except Exception:
+                pass
+            try:
+                cur.execute("ALTER TABLE bookings ADD COLUMN meeting_type TEXT NOT NULL DEFAULT 'Internal Meeting'")
+            except Exception:
+                pass
+            try:
+                cur.execute("ALTER TABLE bookings ADD COLUMN meeting_description TEXT NOT NULL DEFAULT ''")
+            except Exception:
+                pass
+            try:
+                cur.execute("ALTER TABLE bookings ADD COLUMN send_qr BOOLEAN NOT NULL DEFAULT FALSE")
             except Exception:
                 pass
             try:
@@ -144,22 +159,13 @@ def _row_to_booking(row) -> Booking:
         attendees=_ensure_json(row["attendees"]),
         notes=row["notes"],
         cost_centre=row.get("cost_centre", ""),
+        meeting_type=row.get("meeting_type", "Internal Meeting"),
+        meeting_description=row.get("meeting_description", ""),
+        send_qr=bool(row.get("send_qr", False)),
         created_at=row["created_at"],
         updated_at=row["updated_at"],
         actual_check_in=row.get("actual_check_in"),
         actual_check_out=row.get("actual_check_out"),
-    )
-
-
-def _row_to_user(row) -> User:
-    return User(
-        user_id=row["user_id"],
-        name=row["name"],
-        email=row["email"],
-        department=row["department"],
-        role=row["role"],
-        password_hash=row["password_hash"],
-        created_at=row["created_at"],
     )
 
 
@@ -319,7 +325,7 @@ class PostgresBookingRepo(BookingRepository):
         with _connect(self._database_url) as conn:
             with conn.cursor() as cur:
                 cur.execute(
-                    "INSERT INTO bookings (booking_id, room_id, user_id, title, start_time, end_time, status, attendees, notes, cost_centre, created_at, updated_at, actual_check_in, actual_check_out) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
+                    "INSERT INTO bookings (booking_id, room_id, user_id, title, start_time, end_time, status, attendees, notes, cost_centre, meeting_type, meeting_description, send_qr, created_at, updated_at, actual_check_in, actual_check_out) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
                     (
                         booking.booking_id,
                         booking.room_id,
@@ -331,6 +337,9 @@ class PostgresBookingRepo(BookingRepository):
                         json.dumps(booking.attendees or []),
                         booking.notes,
                         booking.cost_centre,
+                        booking.meeting_type,
+                        booking.meeting_description,
+                        booking.send_qr,
                         booking.created_at,
                         booking.updated_at,
                         booking.actual_check_in,
@@ -343,7 +352,7 @@ class PostgresBookingRepo(BookingRepository):
         with _connect(self._database_url) as conn:
             with conn.cursor() as cur:
                 cur.execute(
-                    "UPDATE bookings SET room_id=%s, user_id=%s, title=%s, start_time=%s, end_time=%s, status=%s, attendees=%s, notes=%s, cost_centre=%s, updated_at=%s, actual_check_in=%s, actual_check_out=%s WHERE booking_id=%s",
+                    "UPDATE bookings SET room_id=%s, user_id=%s, title=%s, start_time=%s, end_time=%s, status=%s, attendees=%s, notes=%s, cost_centre=%s, meeting_type=%s, meeting_description=%s, send_qr=%s, updated_at=%s, actual_check_in=%s, actual_check_out=%s WHERE booking_id=%s",
                     (
                         booking.room_id,
                         booking.user_id,
@@ -354,6 +363,9 @@ class PostgresBookingRepo(BookingRepository):
                         json.dumps(booking.attendees or []),
                         booking.notes,
                         booking.cost_centre,
+                        booking.meeting_type,
+                        booking.meeting_description,
+                        booking.send_qr,
                         booking.updated_at,
                         booking.actual_check_in,
                         booking.actual_check_out,

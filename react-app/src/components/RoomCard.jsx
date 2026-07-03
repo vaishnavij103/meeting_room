@@ -3,7 +3,7 @@ import { useTheme } from '../ThemeContext';
 
 export default function RoomCard({ room, selected, onSelect, actions, canBook = true }) {
   const { theme } = useTheme();
-  const { name, capacity, floor, status, amenities = [] } = room;
+  const { name, capacity, floor, status, amenities = [], room_type, cabin_type, building, vc_enabled, power_points } = room;
   const capPct = Math.min((capacity / 50) * 100, 100);
 
   return (
@@ -22,9 +22,14 @@ export default function RoomCard({ room, selected, onSelect, actions, canBook = 
       <div className="flex justify-between items-start mb-3">
         <div className="flex-1 min-w-0">
           <div className={`text-base font-bold ${theme === 'dark' ? 'text-slate-100' : 'text-slate-900'} truncate`}>{name}</div>
-          <div className={`flex items-center gap-3 text-xs ${theme === 'dark' ? 'text-slate-500' : 'text-slate-600'} mt-1`}>
+          <div className={`flex flex-wrap items-center gap-3 text-xs ${theme === 'dark' ? 'text-slate-500' : 'text-slate-600'} mt-1`}>
             <span className="flex items-center gap-1">👥 {capacity} seats</span>
             <span className="flex items-center gap-1">🏢 Floor {floor}</span>
+            {room_type && <span className="flex items-center gap-1">🧩 {room_type}</span>}
+            {cabin_type && <span className="flex items-center gap-1">🚪 {cabin_type}</span>}
+            {building && <span className="flex items-center gap-1">🏬 {building}</span>}
+            {vc_enabled && <span className="flex items-center gap-1">🎥 VC</span>}
+            {power_points && <span className="flex items-center gap-1">⚡ Power</span>}
           </div>
         </div>
         {status && <Badge status={status} />}

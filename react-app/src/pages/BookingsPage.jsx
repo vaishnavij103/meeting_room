@@ -46,6 +46,7 @@ export default function BookingsPage() {
   const [filterDate, setFilterDate] = useState('');
   const [filterRoom, setFilterRoom] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
+  const [filterRoomType, setFilterRoomType] = useState('any');
 
   const [search, setSearch] = useState("");
   const [searchFocused, setSearchFocused] = useState(false);
@@ -112,6 +113,7 @@ export default function BookingsPage() {
   let filtered = [...bookings];
   if (filterDate) filtered = filtered.filter(b => b.start_time?.slice(0, 10) === filterDate);
   if (filterRoom) filtered = filtered.filter(b => b.room_id === filterRoom);
+  if (filterRoomType && filterRoomType !== 'any') filtered = filtered.filter(b => roomMap[b.room_id] && rooms.find(r => r.room_id === b.room_id)?.room_type === filterRoomType);
   if (filterStatus) filtered = filtered.filter(b => b.status === filterStatus);
 
   const confirmedN = filtered.filter(b => b.status === 'confirmed').length;
@@ -168,12 +170,16 @@ export default function BookingsPage() {
       (capacityFilter === "medium" && room.capacity >= 5 && room.capacity <= 10) ||
       (capacityFilter === "large" && room.capacity > 10);
 
+    // Room Type
+    const typeMatch =
+      filterRoomType === 'any' || room.room_type === filterRoomType;
+
     // Amenities
     const amenityMatch =
       amenityFilters.length === 0 ||
       amenityFilters.every(a => room.amenities?.includes(a));
 
-    return searchMatch && statusMatch && capacityMatch && amenityMatch;
+    return searchMatch && statusMatch && capacityMatch && typeMatch && amenityMatch;
   });
 
   return (
@@ -436,6 +442,13 @@ export default function BookingsPage() {
           className={`px-3 py-2 rounded-xl text-xs outline-none border focus:border-indigo-500 transition-all ${theme === 'dark' ? 'bg-[#0a0f1e] border-[#1e2a45] text-slate-100' : 'bg-white border-gray-300 text-slate-900'}`}>
           <option value="">All Rooms</option>
           {cityRooms.map(r => <option key={r.room_id} value={r.room_id}>{r.name}</option>)}
+        </select>
+        <select value={filterRoomType} onChange={e => setFilterRoomType(e.target.value)}
+          className={`px-3 py-2 rounded-xl text-xs outline-none border focus:border-indigo-500 transition-all ${theme === 'dark' ? 'bg-[#0a0f1e] border-[#1e2a45] text-slate-100' : 'bg-white border-gray-300 text-slate-900'}`}>
+          <option value="any">Any Type</option>
+          {Array.from(new Set(cityRooms.map(r => r.room_type).filter(Boolean))).map((type) => (
+            <option key={type} value={type}>{type}</option>
+          ))}
         </select>
         <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)}
           className={`px-3 py-2 rounded-xl text-xs outline-none border focus:border-indigo-500 transition-all ${theme === 'dark' ? 'bg-[#0a0f1e] border-[#1e2a45] text-slate-100' : 'bg-white border-gray-300 text-slate-900'}`}>

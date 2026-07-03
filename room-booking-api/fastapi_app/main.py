@@ -193,7 +193,7 @@ def create_app(
     @app.post("/bookings", status_code=201)
     async def create_booking_route(request: Request):
         booking = bookings_core.create_booking(booking_repo, room_repo, user_repo, await request.json())
-        notifications_core.notify_booking_event(notification_repo, user_repo, booking, "created")
+        notifications_core.notify_booking_event(notification_repo, user_repo, booking, "created", room_repo)
         return _to_dict(booking)
 
     @app.get("/bookings/{booking_id}")
@@ -203,13 +203,13 @@ def create_app(
     @app.put("/bookings/{booking_id}")
     async def update_booking_route(booking_id: str, request: Request):
         booking = bookings_core.update_booking(booking_repo, room_repo, user_repo, booking_id, await request.json())
-        notifications_core.notify_booking_event(notification_repo, user_repo, booking, "updated")
+        notifications_core.notify_booking_event(notification_repo, user_repo, booking, "updated", room_repo)
         return _to_dict(booking)
 
     @app.delete("/bookings/{booking_id}")
     async def cancel_booking_route(booking_id: str):
         booking = bookings_core.cancel_booking(booking_repo, booking_id)
-        notifications_core.notify_booking_event(notification_repo, user_repo, booking, "cancelled")
+        notifications_core.notify_booking_event(notification_repo, user_repo, booking, "cancelled", room_repo)
         return _to_dict(booking)
 
     # ── Users ─────────────────────────────────────────────────────────────
@@ -254,10 +254,11 @@ def create_app(
             return JSONResponse(status_code=409, content={"error": "Already checked in"})
         booking.actual_check_in = datetime.datetime.utcnow().isoformat()
         bookings_core.save_booking(booking_repo, booking)
-        notifications_core.notify_booking_event(notification_repo, user_repo, booking, "checked-in")
+        notifications_core.notify_booking_event(notification_repo, user_repo, booking, "checked-in", room_repo)
         return _to_dict(booking)
 
     @app.post("/bookings/{booking_id}/checkout")
+
     async def checkout_booking_route(booking_id: str):
         # Set actual_check_out to now if not already set
         import datetime
@@ -269,7 +270,7 @@ def create_app(
         if booking.actual_check_out < booking.end_time:
             booking.end_time = booking.actual_check_out
         bookings_core.save_booking(booking_repo, booking)
-        notifications_core.notify_booking_event(notification_repo, user_repo, booking, "checked-out")
+        notifications_core.notify_booking_event(notification_repo, user_repo, booking, "checked-out", room_repo)
         return _to_dict(booking)
 
     # ── Notifications ─────────────────────────────────────────────────────
@@ -303,23 +304,36 @@ def _make_default_app() -> FastAPI:
     notifications_db_url = get_notifications_database_url() or db_url
 
     if db_url:
-        return create_app(
-            room_repo=PostgresRoomRepo(db_url),
-            booking_repo=PostgresBookingRepo(db_url),
-            user_repo=PostgresUserRepo(db_url),
-            admin_repo=PostgresAdminContactRepo(db_url),
-            notification_repo=PostgresNotificationRepo(notifications_db_url or db_url),
-        )
+        # create repos so we can optionally run seeding logic before returning the app
+        room_repo = PostgresRoomRepo(db_url)
+        booking_repo = PostgresBookingRepo(db_url)
+        user_repo = PostgresUserRepo(db_url)
+        admin_repo = PostgresAdminContactRepo(db_url)
+        notification_repo = PostgresNotificationRepo(notifications_db_url or db_url)
+        app = create_app(room_repo=room_repo, booking_repo=booking_repo, user_repo=user_repo, admin_repo=admin_repo, notification_repo=notification_repo)
+        try:
+            # run seeds based on environment or empty DB
+            from ..core.seeds import maybe_run_seeds
+            maybe_run_seeds(room_repo, user_repo, admin_repo)
+        except Exception:
+            pass
+        return app
 
     db_path = get_db_path()
     notifications_db_path = get_notifications_db_path()
-    return create_app(
-        room_repo=SQLiteRoomRepo(db_path),
-        booking_repo=SQLiteBookingRepo(db_path),
-        user_repo=SQLiteUserRepo(db_path),
-        admin_repo=SQLiteAdminContactRepo(db_path),
-        notification_repo=SQLiteNotificationRepo(notifications_db_path),
-    )
+    # create repos first so we can seed the DB if needed
+    room_repo = SQLiteRoomRepo(db_path)
+    booking_repo = SQLiteBookingRepo(db_path)
+    user_repo = SQLiteUserRepo(db_path)
+    admin_repo = SQLiteAdminContactRepo(db_path)
+    notification_repo = SQLiteNotificationRepo(notifications_db_path)
+    app = create_app(room_repo=room_repo, booking_repo=booking_repo, user_repo=user_repo, admin_repo=admin_repo, notification_repo=notification_repo)
+    try:
+        from ..core.seeds import maybe_run_seeds
+        maybe_run_seeds(room_repo, user_repo, admin_repo)
+    except Exception:
+        pass
+    return app
 
 
 app = _make_default_app()

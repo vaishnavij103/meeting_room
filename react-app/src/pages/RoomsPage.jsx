@@ -144,9 +144,16 @@ function RoomImportForm({ onSuccess, onCancel }) {
 
 function RoomForm({ existing, onSave, onCancel }) {
   const { theme } = useTheme();
+  const { location: currentLocation } = useLocation();
   const [name, setName] = useState(existing?.name || '');
+  const [location, setLocation] = useState(existing?.location || currentLocation || '');
+  const [building, setBuilding] = useState(existing?.building || '');
   const [capacity, setCapacity] = useState(existing?.capacity || 10);
   const [floor, setFloor] = useState(existing?.floor || 1);
+  const [roomType, setRoomType] = useState(existing?.room_type || '');
+  const [cabinType, setCabinType] = useState(existing?.cabin_type || '');
+  const [vcEnabled, setVcEnabled] = useState(existing?.vc_enabled || false);
+  const [powerPoints, setPowerPoints] = useState(existing?.power_points || false);
   const [status, setStatus] = useState(existing?.status || 'active');
   const [amenities, setAmenities] = useState(existing?.amenities || []);
   const [allowedUsers, setAllowedUsers] = useState(existing?.allowed_users || []);
@@ -159,12 +166,18 @@ function RoomForm({ existing, onSave, onCancel }) {
 
   useEffect(() => {
     setName(existing?.name || '');
+    setLocation(existing?.location || currentLocation || '');
+    setBuilding(existing?.building || '');
     setCapacity(existing?.capacity || 10);
     setFloor(existing?.floor || 1);
+    setRoomType(existing?.room_type || '');
+    setCabinType(existing?.cabin_type || '');
+    setVcEnabled(existing?.vc_enabled || false);
+    setPowerPoints(existing?.power_points || false);
     setStatus(existing?.status || 'active');
     setAmenities(existing?.amenities || []);
     setAllowedUsers(existing?.allowed_users || []);
-  }, [existing]);
+  }, [existing, currentLocation]);
 
   const toggle = (a) => setAmenities(prev => prev.includes(a) ? prev.filter(x => x !== a) : [...prev, a]);
   const toggleAllowedUser = (userId) => setAllowedUsers(prev => prev.includes(userId) ? prev.filter(x => x !== userId) : [...prev, userId]);
@@ -172,7 +185,21 @@ function RoomForm({ existing, onSave, onCancel }) {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!name.trim()) { setError('Room name is required.'); return; }
-    onSave({ name: name.trim(), capacity: Number(capacity), floor: Number(floor), amenities, status, allowed_users: allowedUsers });
+    if (!location?.trim()) { setError('Location is required.'); return; }
+    onSave({
+      name: name.trim(),
+      location: location.trim(),
+      building: building?.trim() || null,
+      capacity: Number(capacity),
+      floor: Number(floor),
+      room_type: roomType || null,
+      cabin_type: cabinType || null,
+      vc_enabled: vcEnabled,
+      power_points: powerPoints,
+      amenities,
+      status,
+      allowed_users: allowedUsers,
+    });
   };
 
   return (
@@ -189,7 +216,35 @@ function RoomForm({ existing, onSave, onCancel }) {
       <form onSubmit={handleSubmit}>
         <div className="grid grid-cols-2 gap-3 mb-3">
           <Input label="Room Name" value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Horizon Suite" />
+          <Input label="Location" value={location} onChange={e => setLocation(e.target.value)} placeholder="e.g. Pune" />
+        </div>
+        <div className="grid grid-cols-2 gap-3 mb-3">
+          <Input label="Room Type" value={roomType} onChange={e => setRoomType(e.target.value)} placeholder="e.g. Workstation, Board Room" />
+          <Input label="Building" value={building} onChange={e => setBuilding(e.target.value)} placeholder="e.g. Tower A" />
+        </div>
+        <div className="grid grid-cols-2 gap-3 mb-3">
           <Input label="Capacity" type="number" min="1" value={capacity} onChange={e => setCapacity(e.target.value)} />
+          <Input label="Cabin Type" value={cabinType} onChange={e => setCabinType(e.target.value)} placeholder="e.g. Executive, Standard" />
+        </div>
+        <div className="grid grid-cols-2 gap-3 mb-3">
+          <div className="space-y-3">
+            <label className={`block text-xs font-semibold ${theme === 'dark' ? 'text-slate-500' : 'text-slate-600'} uppercase tracking-wider`}>
+              Video Conferencing
+            </label>
+            <label className="flex items-center gap-3 cursor-pointer">
+              <input type="checkbox" checked={vcEnabled} onChange={(e) => setVcEnabled(e.target.checked)} className="h-4 w-4 accent-indigo-600" />
+              <span className={`text-sm ${theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>VC enabled</span>
+            </label>
+          </div>
+          <div className="space-y-3">
+            <label className={`block text-xs font-semibold ${theme === 'dark' ? 'text-slate-500' : 'text-slate-600'} uppercase tracking-wider`}>
+              Power Points
+            </label>
+            <label className="flex items-center gap-3 cursor-pointer">
+              <input type="checkbox" checked={powerPoints} onChange={(e) => setPowerPoints(e.target.checked)} className="h-4 w-4 accent-indigo-600" />
+              <span className={`text-sm ${theme === 'dark' ? 'text-slate-300' : 'text-slate-700'}`}>Has power points</span>
+            </label>
+          </div>
         </div>
         <div className="grid grid-cols-2 gap-3 mb-3">
           <Input label="Floor" type="number" min="0" value={floor} onChange={e => setFloor(e.target.value)} />

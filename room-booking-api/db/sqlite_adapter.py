@@ -77,6 +77,9 @@ CREATE TABLE if not exists bookings (
     attendees  TEXT NOT NULL DEFAULT '[]',
     notes      TEXT NOT NULL DEFAULT '',
     cost_centre TEXT NOT NULL DEFAULT '',
+    meeting_type TEXT NOT NULL DEFAULT 'Internal Meeting',
+    meeting_description TEXT NOT NULL DEFAULT '',
+    send_qr INTEGER NOT NULL DEFAULT 0,
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL,
     actual_check_in TEXT,
@@ -94,6 +97,9 @@ _MIGRATIONS = [
     "ALTER TABLE users ADD COLUMN role TEXT NOT NULL DEFAULT 'employee'",
     "ALTER TABLE users ADD COLUMN password_hash TEXT NOT NULL DEFAULT ''",
     "ALTER TABLE bookings ADD COLUMN cost_centre TEXT NOT NULL DEFAULT ''",
+    "ALTER TABLE bookings ADD COLUMN meeting_type TEXT NOT NULL DEFAULT 'Internal Meeting'",
+    "ALTER TABLE bookings ADD COLUMN meeting_description TEXT NOT NULL DEFAULT ''",
+    "ALTER TABLE bookings ADD COLUMN send_qr INTEGER NOT NULL DEFAULT 0",
     "ALTER TABLE location_wise_rooms ADD COLUMN allowed_users TEXT NOT NULL DEFAULT '[]'",
 ]
 
@@ -151,6 +157,9 @@ def _row_to_booking(row: sqlite3.Row) -> Booking:
         title=row["title"], start_time=row["start_time"], end_time=row["end_time"],
         status=row["status"], attendees=json.loads(row["attendees"]),
         notes=row["notes"], cost_centre=row["cost_centre"] if "cost_centre" in row.keys() else "",
+        meeting_type=row["meeting_type"] if "meeting_type" in row.keys() else "Internal Meeting",
+        meeting_description=row["meeting_description"] if "meeting_description" in row.keys() else "",
+        send_qr=bool(row["send_qr"]) if "send_qr" in row.keys() else False,
         created_at=row["created_at"], updated_at=row["updated_at"],
         actual_check_in=row["actual_check_in"] if "actual_check_in" in row.keys() else None,
         actual_check_out=row["actual_check_out"] if "actual_check_out" in row.keys() else None,
@@ -325,16 +334,34 @@ class SQLiteBookingRepo(BookingRepository):
     def create(self, booking: Booking) -> Booking:
         with _connect(self._db_path) as conn:
             conn.execute(
-                "INSERT INTO bookings (booking_id,room_id,user_id,title,start_time,end_time,status,attendees,notes,cost_centre,created_at,updated_at , actual_check_in,actual_check_out) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
-                (booking.booking_id, booking.room_id, booking.user_id, booking.title, booking.start_time, booking.end_time, booking.status, json.dumps(booking.attendees), booking.notes, booking.cost_centre, booking.created_at, booking.updated_at, booking.actual_check_in, booking.actual_check_out),
+                "INSERT INTO bookings (booking_id,room_id,user_id,title,start_time,end_time,status,attendees,notes,cost_centre,meeting_type,meeting_description,send_qr,created_at,updated_at,actual_check_in,actual_check_out) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                (
+                    booking.booking_id,
+                    booking.room_id,
+                    booking.user_id,
+                    booking.title,
+                    booking.start_time,
+                    booking.end_time,
+                    booking.status,
+                    json.dumps(booking.attendees),
+                    booking.notes,
+                    booking.cost_centre,
+                    booking.meeting_type,
+                    booking.meeting_description,
+                    int(booking.send_qr),
+                    booking.created_at,
+                    booking.updated_at,
+                    booking.actual_check_in,
+                    booking.actual_check_out,
+                ),
             )
         return booking
 
     def update(self, booking: Booking) -> Booking:
         with _connect(self._db_path) as conn:
             conn.execute(
-                "UPDATE bookings SET room_id=?,user_id=?,title=?,start_time=?,end_time=?,status=?,attendees=?,notes=?,cost_centre=?,updated_at=? , actual_check_in=?,actual_check_out=? WHERE booking_id=?",
-                (booking.room_id, booking.user_id, booking.title, booking.start_time, booking.end_time, booking.status, json.dumps(booking.attendees), booking.notes, booking.cost_centre, booking.updated_at,booking.actual_check_in, booking.actual_check_out, booking.booking_id),
+                "UPDATE bookings SET room_id=?,user_id=?,title=?,start_time=?,end_time=?,status=?,attendees=?,notes=?,cost_centre=?,meeting_type=?,meeting_description=?,send_qr=?,updated_at=? , actual_check_in=?,actual_check_out=? WHERE booking_id=?",
+                (booking.room_id, booking.user_id, booking.title, booking.start_time, booking.end_time, booking.status, json.dumps(booking.attendees), booking.notes, booking.cost_centre, booking.meeting_type, booking.meeting_description, int(booking.send_qr), booking.updated_at,booking.actual_check_in, booking.actual_check_out, booking.booking_id),
             )
         return booking
 

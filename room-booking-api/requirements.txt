@@ -8,3 +8,5 @@ requests>=2.34.2
 psycopg2-binary>=2.9.0
 python-multipart>=0.0.29
 python-dotenv>=1.2.2
+qrcode>=7.3
+Pillow>=10.0.0
